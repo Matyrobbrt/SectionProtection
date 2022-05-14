@@ -1,52 +1,65 @@
 package com.matyrobbrt.sectionprotection.api;
 
-import java.util.Collections;
+import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
 
 import com.google.common.collect.Lists;
 import com.matyrobbrt.sectionprotection.api.Member.Permission;
+import com.matyrobbrt.sectionprotection.world.TeamRegistry;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
+import net.minecraft.world.level.chunk.LevelChunk;
+
 public class Team {
 
-    public static final Codec<Team> CODEC = RecordCodecBuilder.create(
-        in -> in.group(Codec.list(Member.CODEC).fieldOf("members").forGetter(Team::getMembers)).apply(in, Team::new));
+    public static final Codec<Team> CODEC = RecordCodecBuilder
+        .create(
+            in -> in
+                .group(Codec.list(Member.CODEC).fieldOf("members").forGetter(t -> List.copyOf(t.getMembers().values())),
+                    Codec.list(ChunkData.CODEC).fieldOf("chunks").forGetter(t -> t.claimedChunks))
+                .apply(in, Team::new));
 
-    private final List<Member> members;
-    private final List<Member> membersView;
+    private final Map<UUID, Member> members;
 
-    public Team(List<Member> members) {
-        this.members = members;
-        membersView = Collections.unmodifiableList(this.members);
+    private final List<ChunkData> claimedChunks;
+
+    private Team(List<Member> members, List<ChunkData> claimedChunks) {
+        this.members = members.stream().collect(Collectors.toMap(Member::getUUID, Function.identity()));
+        this.claimedChunks = claimedChunks;
     }
 
     public Team(UUID owner) {
-        this(Lists.newArrayList(new Member(Lists.newArrayList(Permission.values()), owner)));
+        this(Lists.newArrayList(new Member(EnumSet.allOf(Permission.class), owner)), new ArrayList<>());
     }
 
-    public List<Member> getMembers() {
-        return membersView;
+    public Map<UUID, Member> getMembers() {
+        return members;
     }
 
     public void addMember(Member member) {
-        this.members.add(member);
+        this.members.put(member.getUUID(), member);
     }
 
     public void removeMember(Member member) {
-        this.members.remove(member);
+        this.members.remove(member.getUUID());
     }
 
     @Nullable
     public Member getMember(UUID id) {
-        for (final var m : members) {
-            if (m.getUUID().equals(id)) {
-                return m;
-            }
-        }
-        return null;
+        return members.get(id);
+    }
+
+    public static void claim(String teamId, LevelChunk chunk) {
+        final var team = TeamRegistry.get(chunk.getLevel().getServer()).getTeam(teamId);
+        team.claimedChunks.add(new ChunkData(chunk));
+        chunk.getCapability(ClaimedChunk.CAPABILITY).ifPresent(claimed -> claimed.setOwnerTeam(teamId));
     }
 }
