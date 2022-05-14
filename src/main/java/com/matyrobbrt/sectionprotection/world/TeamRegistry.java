@@ -18,6 +18,8 @@ import net.minecraft.world.level.saveddata.SavedData;
 
 public class TeamRegistry extends SavedData {
 
+    public static final int CURRENT_VERSION = 0;
+
     private final Map<String, Team> teams = new HashMap<>();
 
     @Override
@@ -25,6 +27,7 @@ public class TeamRegistry extends SavedData {
         final var teamsNbt = new CompoundTag();
         teams.forEach((id, team) -> teamsNbt.put(id, Team.CODEC.encodeStart(NbtOps.INSTANCE, team).get().orThrow()));
         tag.put("teams", teamsNbt);
+        tag.putInt("version", CURRENT_VERSION);
         return tag;
     }
 

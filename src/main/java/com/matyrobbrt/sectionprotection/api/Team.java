@@ -58,8 +58,10 @@ public class Team {
     }
 
     public static void claim(String teamId, LevelChunk chunk) {
-        final var team = TeamRegistry.get(chunk.getLevel().getServer()).getTeam(teamId);
+        final var reg = TeamRegistry.get(chunk.getLevel().getServer());
+        final var team = reg.getTeam(teamId);
         team.claimedChunks.add(new ChunkData(chunk));
         chunk.getCapability(ClaimedChunk.CAPABILITY).ifPresent(claimed -> claimed.setOwnerTeam(teamId));
+        reg.setDirty(true);
     }
 }

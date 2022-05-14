@@ -1,15 +1,16 @@
 package com.matyrobbrt.sectionprotection.command;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.annotation.Nullable;
 
 import org.antlr.v4.runtime.misc.Pair;
 
-import com.matyrobbrt.sectionprotection.api.Member.Permission;
 import com.matyrobbrt.sectionprotection.api.Team;
+import com.matyrobbrt.sectionprotection.network.RequestTeamsPacket;
+import com.matyrobbrt.sectionprotection.network.SPNetwork;
 import com.matyrobbrt.sectionprotection.world.TeamRegistry;
 import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.arguments.ArgumentType;
@@ -20,8 +21,8 @@ import com.mojang.brigadier.suggestion.Suggestion;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 
+import net.minecraft.client.multiplayer.ClientSuggestionProvider;
 import net.minecraft.commands.CommandSourceStack;
-import net.minecraft.server.level.ServerPlayer;
 
 public class TeamArgument implements ArgumentType<String> {
 
@@ -36,23 +37,27 @@ public class TeamArgument implements ArgumentType<String> {
 
     @Override
     public <S> CompletableFuture<Suggestions> listSuggestions(CommandContext<S> context, SuggestionsBuilder builder) {
-        if (context.getSource() instanceof CommandSourceStack s) {
-            if (s.getEntity() instanceof ServerPlayer player) {
-                final boolean isOp = s.getServer().getPlayerList().isOp(player.getGameProfile());
-                final TeamRegistry reg = TeamRegistry.get(s.getServer());
-                final var in = builder.getInput();
-                return CompletableFuture.supplyAsync(() -> {
-                    final Collection<String> teams = isOp ? reg.getAllTeams().keySet() : reg.getTeams(player.getUUID());
+        if (context.getSource() instanceof ClientSuggestionProvider s) {
+            final var in = builder.getInput();
+            return CompletableFuture.supplyAsync(() -> {
+                final var received = new AtomicReference<Suggestions>();
+                SPNetwork.CHANNEL.sendToServer(RequestTeamsPacket.INSTANCE);
+                RequestTeamsPacket.TEAMS.addListener(teams -> {
                     final List<Suggestion> sug = teams.stream().filter(t -> t.startsWith(in))
-                        .filter(
-                            t -> isOp || reg.getTeam(t).getMember(player.getUUID()).getPermissions()
-                                .contains(Permission.OWNER))
                         .map(ss -> ss.substring(in.length()))
                         .map(actual -> new Suggestion(StringRange.at(in.length()), actual))
                         .toList();
-                    return new Suggestions(StringRange.at(in.length()), sug);
+                    received.set(new Suggestions(StringRange.at(in.length()), sug));
                 });
-            }
+                while (received.get() == null) {
+                    try {
+                        Thread.sleep(100L);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+                return received.get();
+            });
         }
         return ArgumentType.super.listSuggestions(context, builder);
     }

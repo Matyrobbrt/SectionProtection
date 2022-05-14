@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import com.matyrobbrt.sectionprotection.api.ClaimedChunk;
 import com.matyrobbrt.sectionprotection.api.OneCapProvider;
 import com.matyrobbrt.sectionprotection.api.Team;
+import com.matyrobbrt.sectionprotection.network.SPNetwork;
 import com.matyrobbrt.sectionprotection.world.TeamRegistry;
 import com.mojang.logging.LogUtils;
 
@@ -22,6 +23,7 @@ import net.minecraftforge.event.AttachCapabilitiesEvent;
 import net.minecraftforge.event.entity.item.ItemTossEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 
 @Mod(SectionProtection.MOD_ID)
@@ -31,7 +33,10 @@ public class SectionProtection {
     public static final Logger LOGGER = LogUtils.getLogger();
 
     public SectionProtection() {
-        FMLJavaModLoadingContext.get().getModEventBus().addListener(SectionProtection::registerCaps);
+        final var bus = FMLJavaModLoadingContext.get().getModEventBus();
+
+        bus.addListener(SectionProtection::registerCaps);
+        bus.addListener((final FMLCommonSetupEvent event) -> SPNetwork.register());
 
         MinecraftForge.EVENT_BUS.register(SectionProtection.class);
     }
