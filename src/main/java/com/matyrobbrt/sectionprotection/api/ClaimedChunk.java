@@ -3,6 +3,7 @@ package com.matyrobbrt.sectionprotection.api;
 import javax.annotation.Nullable;
 
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
 
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.CapabilityManager;
@@ -14,16 +15,16 @@ public interface ClaimedChunk extends INBTSerializable<CompoundTag> {
     Capability<ClaimedChunk> CAPABILITY = CapabilityManager.get(new CapabilityToken<>() {});
 
     @Nullable
-    String getOwnerTeam();
+    Banner getOwningBanner();
 
-    void setOwnerTeam(String team);
+    void setOwningBanner(Banner banner);
 
     class Impl implements ClaimedChunk {
 
-        private String owner;
+        private Banner banner;
 
-        public Impl(String owner) {
-            this.owner = owner;
+        public Impl(Banner owner) {
+            this.banner = owner;
         }
 
         public Impl() {
@@ -33,27 +34,27 @@ public interface ClaimedChunk extends INBTSerializable<CompoundTag> {
         @Override
         public CompoundTag serializeNBT() {
             final var nbt = new CompoundTag();
-            if (owner != null) {
-                nbt.putString("owner", owner);
+            if (banner != null) {
+                nbt.put("banner", banner.serialize());
             }
             return nbt;
         }
 
         @Override
         public void deserializeNBT(CompoundTag nbt) {
-            if (nbt.contains("owner")) {
-                owner = nbt.getString("owner");
+            if (nbt.contains("banner")) {
+                banner = new Banner(nbt.getList("banner", Tag.TAG_COMPOUND));
             }
         }
 
         @Override
-        public String getOwnerTeam() {
-            return owner;
+        public Banner getOwningBanner() {
+            return banner;
         }
 
         @Override
-        public void setOwnerTeam(String team) {
-            this.owner = team;
+        public void setOwningBanner(Banner banner) {
+            this.banner = banner;
         }
 
     }

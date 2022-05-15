@@ -3,17 +3,25 @@ package com.matyrobbrt.sectionprotection;
 import java.util.function.Function;
 
 import com.matyrobbrt.sectionprotection.api.ClaimedChunk;
-import com.matyrobbrt.sectionprotection.api.Member.Permission;
-import com.matyrobbrt.sectionprotection.world.TeamRegistry;
+import com.matyrobbrt.sectionprotection.util.Utils;
+import com.matyrobbrt.sectionprotection.world.Banners;
 
+import net.minecraft.ChatFormatting;
+import net.minecraft.Util;
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.ChatType;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.TextComponent;
 import net.minecraft.server.level.ServerPlayer;
 
+import net.minecraftforge.common.util.FakePlayer;
+import net.minecraftforge.event.entity.EntityMobGriefingEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent.RightClickBlock;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent.RightClickItem;
 import net.minecraftforge.event.world.BlockEvent;
 import net.minecraftforge.eventbus.api.Event;
+import net.minecraftforge.eventbus.api.Event.Result;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
 
@@ -23,56 +31,76 @@ public class ProtectionListeners {
     @SubscribeEvent
     static void onPlaceEvent(final BlockEvent.EntityPlaceEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
-            checkCanExecute(event, player, Permission.PLACE);
+            checkCanExecute(event, player);
         }
     }
 
     @SubscribeEvent
     static void onBreakEvent(final BlockEvent.BreakEvent event) {
         if (event.getPlayer() instanceof ServerPlayer player) {
-            checkCanExecute(event, player, Permission.BREAK);
+            checkCanExecute(event, player);
         }
     }
 
     @SubscribeEvent
     static void onMod(final BlockEvent.BlockToolModificationEvent event) {
         if (!event.isSimulated() && event.getPlayer() instanceof ServerPlayer player) {
-            checkCanExecute(event, player, Permission.INTERACT);
+            checkCanExecute(event, player);
         }
     }
 
     @SubscribeEvent
     static void interact(final PlayerInteractEvent.RightClickBlock event) {
         if (event.getPlayer() instanceof ServerPlayer player) {
-            checkCanExecute(event, RightClickBlock::getPos, player, Permission.INTERACT);
+            checkCanExecute(event, RightClickBlock::getPos, player);
         }
     }
 
     @SubscribeEvent
     static void interact(final PlayerInteractEvent.RightClickItem event) {
         if (event.getPlayer() instanceof ServerPlayer player) {
-            checkCanExecute(event, RightClickItem::getPos, player, Permission.INTERACT);
+            checkCanExecute(event, RightClickItem::getPos, player);
         }
     }
 
-    private static void checkCanExecute(final BlockEvent event, final ServerPlayer player,
-        final Permission permission) {
-        checkCanExecute(event, BlockEvent::getPos, player, permission);
+    @SubscribeEvent
+    static void griefing(final EntityMobGriefingEvent event) {
+        if (event.getEntity().level.isClientSide())
+            return;
+        event.getEntity().level.getChunkAt(event.getEntity().blockPosition()).getCapability(ClaimedChunk.CAPABILITY)
+            .ifPresent(claimed -> {
+                if (claimed.getOwningBanner() != null) {
+                    event.setResult(Result.DENY);
+                }
+            });
+    }
+
+    private static void checkCanExecute(final BlockEvent event, final ServerPlayer player) {
+        checkCanExecute(event, BlockEvent::getPos, player);
     }
 
     private static <T extends Event> void checkCanExecute(final T event, final Function<T, BlockPos> pos,
-        final ServerPlayer player,
-        final Permission permission) {
+        final ServerPlayer player) {
+        if (ServerConfig.ALLOW_FAKE_PLAYERS.get() && player instanceof FakePlayer) {
+            return;
+        }
         if (!player.isCreative()) {
-            final var reg = TeamRegistry.get(player.getServer());
+            final var reg = Banners.get(player.server);
             player.level.getChunkAt(pos.apply(event)).getCapability(ClaimedChunk.CAPABILITY).ifPresent(claimed -> {
-                if (claimed.getOwnerTeam() != null) {
-                    final var team = reg.getTeam(claimed.getOwnerTeam());
+                if (claimed.getOwningBanner() != null) {
+                    final var team = reg.getMembers(claimed.getOwningBanner());
                     if (team != null) {
-                        final var member = team.getMember(player.getUUID());
-                        if ((member == null || team.getDefaultPermissions().contains(permission))
-                            || !member.getPermissions().contains(permission)) {
+                        if (!team.contains(player.getUUID())) {
                             cancelWithContainerUpdate(event, player);
+                            final MutableComponent playerName = Utils.getOwnerName(player.server, team)
+                                    .map(g -> new TextComponent(g).withStyle(s -> s.withColor(0x009B00)))
+                                    .orElse(new TextComponent("someone else").withStyle(ChatFormatting.GRAY));
+                            player.sendMessage(new TextComponent(
+                                "We're sorry, we can't let you do that! This chunk is owned by ")
+                                    .withStyle(ChatFormatting.GRAY)
+                                    .append(playerName)
+                                    .append("."),
+                                ChatType.GAME_INFO, Util.NIL_UUID);
                         }
                     }
                 }

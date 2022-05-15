@@ -1,0 +1,15 @@
+{
+  "required": true,
+  "package": "com.matyrobbrt.sectionprotection.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "refmap": "sectionprotection.refmap.json",
+  "mixins": [
+    "MixinBlockItem",
+    "MixinPrimedTnt",
+    "banner.MixinBannerBE",
+    "banner.MixinBannerBlock",
+    "lectern.MixinLecternBE",
+    "lectern.MixinLecternBlock"
+  ],
+  "minVersion": "0.8"
+}
