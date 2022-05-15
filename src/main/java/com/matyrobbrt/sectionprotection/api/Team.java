@@ -12,6 +12,7 @@ import javax.annotation.Nullable;
 
 import com.google.common.collect.Lists;
 import com.matyrobbrt.sectionprotection.api.Member.Permission;
+import com.matyrobbrt.sectionprotection.util.codec.Codecs;
 import com.matyrobbrt.sectionprotection.world.TeamRegistry;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
@@ -23,21 +24,29 @@ public class Team {
     public static final Codec<Team> CODEC = RecordCodecBuilder
         .create(
             in -> in
-                .group(Codec.list(Member.CODEC).fieldOf("members").forGetter(t -> List.copyOf(t.getMembers().values())),
-                    Codec.list(ChunkData.CODEC).fieldOf("chunks").forGetter(t -> t.claimedChunks))
+                .group(
+                    Codecs.mutableList(Member.CODEC).fieldOf("members")
+                        .forGetter(t -> List.copyOf(t.getMembers().values())),
+                    Codecs.mutableList(ChunkData.CODEC)
+                        .fieldOf("chunks").forGetter(t -> t.claimedChunks),
+                    Codecs.enumSet(Codecs.forEnum(Permission.class)).fieldOf("default_permission")
+                        .forGetter(Team::getDefaultPermissions))
                 .apply(in, Team::new));
 
     private final Map<UUID, Member> members;
 
     private final List<ChunkData> claimedChunks;
+    private final EnumSet<Permission> defaultPermissions;
 
-    private Team(List<Member> members, List<ChunkData> claimedChunks) {
+    private Team(List<Member> members, List<ChunkData> claimedChunks, EnumSet<Permission> defaultPermissions) {
         this.members = members.stream().collect(Collectors.toMap(Member::getUUID, Function.identity()));
         this.claimedChunks = claimedChunks;
+        this.defaultPermissions = defaultPermissions;
     }
 
     public Team(UUID owner) {
-        this(Lists.newArrayList(new Member(EnumSet.allOf(Permission.class), owner)), new ArrayList<>());
+        this(Lists.newArrayList(new Member(EnumSet.allOf(Permission.class), owner)), new ArrayList<>(),
+            EnumSet.of(Permission.INTERACT));
     }
 
     public Map<UUID, Member> getMembers() {
@@ -50,6 +59,10 @@ public class Team {
 
     public void removeMember(Member member) {
         this.members.remove(member.getUUID());
+    }
+
+    public EnumSet<Permission> getDefaultPermissions() {
+        return defaultPermissions;
     }
 
     @Nullable
