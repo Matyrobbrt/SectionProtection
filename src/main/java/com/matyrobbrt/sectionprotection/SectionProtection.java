@@ -57,8 +57,9 @@ public class SectionProtection {
         event.register(ClaimedChunk.class);
     }
 
+    @SuppressWarnings("ALL")
     public static boolean isConversionItem(ItemStack stack) {
-        // TODO use tag
-        return stack.is(IS_CONVERSION_ITEM);
+        return stack.is(IS_CONVERSION_ITEM) || ServerConfig.CONVERSION_ITEMS.get()
+            .stream().anyMatch(s -> stack.getItem().getRegistryName().toString().equals(s));
     }
 }
