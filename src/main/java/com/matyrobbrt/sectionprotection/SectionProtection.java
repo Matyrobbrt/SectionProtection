@@ -7,6 +7,8 @@ import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.capabilities.RegisterCapabilitiesEvent;
@@ -20,6 +22,7 @@ import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.network.NetworkConstants;
 import org.slf4j.Logger;
 
+// TODO lazy translation if client has mod present
 @Mod(SectionProtection.MOD_ID)
 public class SectionProtection {
 
@@ -49,5 +52,10 @@ public class SectionProtection {
 
     static void registerCaps(final RegisterCapabilitiesEvent event) {
         event.register(ClaimedChunk.class);
+    }
+
+    public static boolean isConversionItem(ItemStack stack) {
+        // TODO use tag
+        return stack.getItem() == Items.NETHERITE_INGOT;
     }
 }

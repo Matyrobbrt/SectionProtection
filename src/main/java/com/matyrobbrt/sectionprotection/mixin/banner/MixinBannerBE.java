@@ -1,7 +1,11 @@
 package com.matyrobbrt.sectionprotection.mixin.banner;
 
-import com.matyrobbrt.sectionprotection.api.ClaimedChunk;
+import com.matyrobbrt.sectionprotection.Constants;
+import com.matyrobbrt.sectionprotection.api.BannerExtension;
 import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.entity.BannerBlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
@@ -11,13 +15,6 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
-
-import com.matyrobbrt.sectionprotection.Constants;
-import com.matyrobbrt.sectionprotection.api.BannerExtension;
-
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.block.entity.BannerBlockEntity;
 
 //@formatter:off
 @Mixin(BannerBlockEntity.class)
@@ -60,20 +57,5 @@ public class MixinBannerBE extends BlockEntity implements BannerExtension {
     @Inject(method = "getItem()Lnet/minecraft/world/item/ItemStack;", at = @At("RETURN"), locals = LocalCapture.CAPTURE_FAILHARD)
     private void sectionprotection$saveItem(CallbackInfoReturnable<ItemStack> ci, ItemStack stack) {
         stack.getOrCreateTag().putBoolean(Constants.PROTECTION_BANNER, isProtectionBanner);
-    }
-
-//    @Inject(method = "setRemoved()V", at = @At("TAIL"))
-//    private void sectionprotection$clearOwner(CallbackInfo ci) {
-//        if (isProtectionBanner && level != null) {
-//            level.getChunkAt(worldPosition).getCapability(ClaimedChunk.CAPABILITY).ifPresent(claimed -> claimed.setOwningBanner(null));
-//        }
-//    }
-
-    @Override
-    public void setRemoved() {
-        if (isProtectionBanner && level != null) {
-            level.getChunkAt(worldPosition).getCapability(ClaimedChunk.CAPABILITY).ifPresent(claimed -> claimed.setOwningBanner(null));
-        }
-        super.setRemoved();
     }
 }

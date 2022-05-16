@@ -89,19 +89,17 @@ public class ProtectionListeners {
             player.level.getChunkAt(pos.apply(event)).getCapability(ClaimedChunk.CAPABILITY).ifPresent(claimed -> {
                 if (claimed.getOwningBanner() != null) {
                     final var team = reg.getMembers(claimed.getOwningBanner());
-                    if (team != null) {
-                        if (!team.contains(player.getUUID())) {
-                            cancelWithContainerUpdate(event, player);
-                            final MutableComponent playerName = Utils.getOwnerName(player.server, team)
-                                    .map(g -> new TextComponent(g).withStyle(s -> s.withColor(0x009B00)))
-                                    .orElse(new TextComponent("someone else").withStyle(ChatFormatting.GRAY));
-                            player.sendMessage(new TextComponent(
-                                "We're sorry, we can't let you do that! This chunk is owned by ")
-                                    .withStyle(ChatFormatting.GRAY)
-                                    .append(playerName)
-                                    .append("."),
-                                ChatType.GAME_INFO, Util.NIL_UUID);
-                        }
+                    if (team != null && !team.contains(player.getUUID())) {
+                        cancelWithContainerUpdate(event, player);
+                        final MutableComponent playerName = Utils.getOwnerName(player.server, team)
+                                .map(g -> new TextComponent(g).withStyle(s -> s.withColor(0x009B00)))
+                                .orElse(new TextComponent("someone else").withStyle(ChatFormatting.GRAY));
+                        player.sendMessage(new TextComponent(
+                            "We're sorry, we can't let you do that! This chunk is owned by ")
+                                .withStyle(ChatFormatting.GRAY)
+                                .append(playerName)
+                                .append("."),
+                            ChatType.GAME_INFO, Util.NIL_UUID);
                     }
                 }
             });
