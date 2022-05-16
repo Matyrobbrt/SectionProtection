@@ -2,6 +2,7 @@ package com.matyrobbrt.sectionprotection;
 
 import com.matyrobbrt.sectionprotection.api.ClaimedChunk;
 import com.matyrobbrt.sectionprotection.api.OneCapProvider;
+import com.matyrobbrt.sectionprotection.commands.SPCommands;
 import com.mojang.logging.LogUtils;
 import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceLocation;
@@ -40,7 +41,9 @@ public class SectionProtection {
 
         bus.addListener(SectionProtection::registerCaps);
 
+        MinecraftForge.EVENT_BUS.addListener(SPCommands::register);
         MinecraftForge.EVENT_BUS.register(SectionProtection.class);
+        MinecraftForge.EVENT_BUS.register(ProtectionListeners.class);
     }
 
     private static final ResourceLocation CAP_ID = new ResourceLocation(MOD_ID, "claimed");
@@ -56,6 +59,6 @@ public class SectionProtection {
 
     public static boolean isConversionItem(ItemStack stack) {
         // TODO use tag
-        return stack.getItem() == Items.NETHERITE_INGOT;
+        return stack.is(IS_CONVERSION_ITEM);
     }
 }

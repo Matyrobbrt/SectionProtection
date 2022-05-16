@@ -140,34 +140,37 @@ public abstract class MixinLecternBE extends BlockEntity implements LecternExten
 
         final var banners = Banners.get(level.getServer());
         final var team = banners.getMembers(cap.getOwningBanner());
-        if (team == null) {
-            banners.createTeam(cap.getOwningBanner(), pPlayer.getUUID());
-            players.remove(pPlayer.getUUID());
-            banners.getMembers(cap.getOwningBanner()).addAll(players);
-        } else {
-            if (!team.contains(pPlayer.getUUID())) {
-                return; // Don't do stuff on behlaf of another team
-            }
-
-            if (!players.contains(pPlayer.getUUID())) {
-                players.add(pPlayer.getUUID());
-            }
-            if (team.size() > 0 && !players.contains(team.get(0))) {
-                if (players.size() < 1) {
-                    players.add(team.get(0));
-                } else {
-                    players.add(0, team.get(0)); // Make sure owner is there
+        if (!players.isEmpty()) { // If empty, they want a list of members already in the team
+            if (team == null) {
+                banners.createTeam(cap.getOwningBanner(), pPlayer.getUUID());
+                players.remove(pPlayer.getUUID());
+                banners.getMembers(cap.getOwningBanner()).addAll(players);
+            } else {
+                if (!team.contains(pPlayer.getUUID())) {
+                    return; // Don't do stuff on behlaf of another team
                 }
+
+                if (!players.contains(pPlayer.getUUID())) {
+                    players.add(pPlayer.getUUID());
+                }
+                if (team.size() > 0 && !players.contains(team.get(0))) {
+                    if (players.size() < 1) {
+                        players.add(team.get(0));
+                    } else {
+                        players.add(0, team.get(0)); // Make sure owner is there
+                    }
+                }
+                team.clear();
+                team.addAll(players);
             }
-            team.clear();
-            team.addAll(players);
+            banners.setDirty();
         }
-        banners.setDirty();
 
         // Now recreate the book
+        final var newTeam = banners.getMembers(cap.getOwningBanner());
         final var newBook = new ItemStack(pStack.getItem());
         final var newList = new ListTag();
-        Lists.partition(players, 6).forEach(sub -> {
+        Lists.partition(newTeam, 6).forEach(sub -> {
             var str = "";
             for (int i = 0; i < sub.size(); i++) {
                 final var name = Utils.getPlayerName(level.getServer(), sub.get(i));

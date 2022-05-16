@@ -23,9 +23,7 @@ import net.minecraftforge.event.world.BlockEvent;
 import net.minecraftforge.eventbus.api.Event;
 import net.minecraftforge.eventbus.api.Event.Result;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
 
-@EventBusSubscriber
 public class ProtectionListeners {
 
     @SubscribeEvent
@@ -92,13 +90,12 @@ public class ProtectionListeners {
                     if (team != null && !team.contains(player.getUUID())) {
                         cancelWithContainerUpdate(event, player);
                         final MutableComponent playerName = Utils.getOwnerName(player.server, team)
-                                .map(g -> new TextComponent(g).withStyle(s -> s.withColor(0x009B00)))
+                                .map(g -> new TextComponent(g).withStyle(Constants.WITH_PLAYER_NAME))
                                 .orElse(new TextComponent("someone else").withStyle(ChatFormatting.GRAY));
                         player.sendMessage(new TextComponent(
                             "We're sorry, we can't let you do that! This chunk is owned by ")
                                 .withStyle(ChatFormatting.GRAY)
-                                .append(playerName)
-                                .append("."),
+                                .append(playerName),
                             ChatType.GAME_INFO, Util.NIL_UUID);
                     }
                 }

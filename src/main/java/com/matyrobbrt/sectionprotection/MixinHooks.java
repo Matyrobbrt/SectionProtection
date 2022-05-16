@@ -78,30 +78,6 @@ public class MixinHooks {
     }
 
     public static final class Lectern {
-        public static void use(LecternBlock lecternBlock, BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, InteractionHand pHand, BlockHitResult pHit, CallbackInfoReturnable<InteractionResult> cir) {
-            if (pLevel.isClientSide())
-                return;
-            final var ret = new AtomicReference<InteractionResult>();
-            pLevel.getBlockEntity(pPos, BlockEntityType.LECTERN).ifPresent(lectern -> {
-                final var extensionLectern = ((LecternExtension) lectern);
-                final var stack = pPlayer.getItemInHand(pHand);
-                if (!extensionLectern.isProtectionLectern() && SectionProtection.isConversionItem(stack)) {
-                    if (!pPlayer.isCreative()) {
-                        stack.shrink(1);
-                    }
-                    extensionLectern.setProtectionLectern(true);
-                    ret.set(InteractionResult.CONSUME);
-                } else if (!lectern.hasBook()) {
-                    ret.set(InteractionResult.PASS);
-                }
-            });
-            if (ret.get() != null) {
-                cir.setReturnValue(ret.get());
-            } else {
-                pPlayer.openMenu(lecternBlock.getMenuProvider(pState, pLevel, pPos));
-                cir.setReturnValue(InteractionResult.CONSUME);
-            }
-        }
 
         public static List<ItemStack> getDrops(BlockState pState, LootContext.Builder pBuilder, List<ItemStack> sup) {
             final var be = pBuilder.getParameter(LootContextParams.BLOCK_ENTITY);
@@ -173,9 +149,21 @@ public class MixinHooks {
         }
 
         public static void setRemoved(BannerBlockEntity banner) {
-            if (((BannerExtension) banner).isProtectionBanner() && banner.getLevel() != null) {
+            final var ext = ((BannerExtension) banner);
+            if (
+                // @Volatile: MC calls setRemoved when a chunk unloads now as well (see ServerLevel#unload -> LevelChunk#clearAllBlockEntities).
+                // Since we don't want to remove the claimed status of a chunk (which also makes the server freeze in the case of a save in progress), we need to know if it was removed due to unloading.
+                // We can use "unloaded" for that, it's set in #onChunkUnloaded.
+                // Since MC first calls #onChunkUnloaded and then #setRemoved, this check keeps working.
+                !ext.getSectionProtectionIsUnloaded()
+
+                && ext.isProtectionBanner() && banner.getLevel() != null) {
                 banner.getLevel().getChunkAt(banner.getBlockPos()).getCapability(ClaimedChunk.CAPABILITY).ifPresent(claimed -> claimed.setOwningBanner(null));
             }
+        }
+
+        public static void onUnloaded(BannerExtension banner) {
+            banner.setSectionProtectionIsUnloaded(true);
         }
     }
 }

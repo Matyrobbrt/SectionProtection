@@ -42,8 +42,8 @@ public record Banner(List<Data> data) {
 
     public ListTag serialize() {
         final var tag = new ListTag();
-        for (int i = 0; i < data.size(); ++i) {
-            tag.add(data.get(i).serialize());
+        for (final var datum : data) {
+            tag.add(datum.serialize());
         }
         return tag;
     }

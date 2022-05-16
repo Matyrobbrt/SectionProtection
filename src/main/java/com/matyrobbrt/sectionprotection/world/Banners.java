@@ -24,6 +24,12 @@ import org.jetbrains.annotations.NotNull;
 
 public class Banners extends SavedData {
 
+    /**
+     * This represents the current version of the SavedData, allowing us to convert data between
+     * an older version and a new one.
+     */
+    public static final int CURRENT_VERSION = 1;
+
     private final Map<Banner, List<UUID>> banners;
 
     public Banners() {
@@ -56,6 +62,7 @@ public class Banners extends SavedData {
             datas.add(data);
         });
         pCompoundTag.put("data", datas);
+        pCompoundTag.putInt("dataVersion", CURRENT_VERSION);
         return pCompoundTag;
     }
 

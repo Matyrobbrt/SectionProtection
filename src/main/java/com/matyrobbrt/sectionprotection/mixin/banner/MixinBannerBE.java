@@ -21,6 +21,7 @@ import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 public class MixinBannerBE extends BlockEntity implements BannerExtension {
 
     private boolean isProtectionBanner;
+    private boolean sectionprotection$unloaded;
 
     public MixinBannerBE(BlockEntityType<?> pType, BlockPos pWorldPosition, BlockState pBlockState) {
         super(pType, pWorldPosition, pBlockState);
@@ -57,5 +58,15 @@ public class MixinBannerBE extends BlockEntity implements BannerExtension {
     @Inject(method = "getItem()Lnet/minecraft/world/item/ItemStack;", at = @At("RETURN"), locals = LocalCapture.CAPTURE_FAILHARD)
     private void sectionprotection$saveItem(CallbackInfoReturnable<ItemStack> ci, ItemStack stack) {
         stack.getOrCreateTag().putBoolean(Constants.PROTECTION_BANNER, isProtectionBanner);
+    }
+
+    @Override
+    public boolean getSectionProtectionIsUnloaded() {
+        return sectionprotection$unloaded;
+    }
+
+    @Override
+    public void setSectionProtectionIsUnloaded(boolean isUnloaded) {
+        this.sectionprotection$unloaded = isUnloaded;
     }
 }

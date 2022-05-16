@@ -30,9 +30,7 @@ public abstract class MixinBlockBehaviour {
     )
     @SuppressWarnings("ALL")
     private void sectionprotection$use(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, InteractionHand pHand, BlockHitResult pHit, CallbackInfoReturnable<InteractionResult> cir) {
-        if (((Object) this) instanceof LecternBlock lecternBlock) {
-            MixinHooks.Lectern.use(lecternBlock, pState, pLevel, pPos, pPlayer, pHand, pHit, cir);
-        } else if (((Object) this) instanceof BannerBlock bannerBlock) {
+        if (((Object) this) instanceof BannerBlock bannerBlock) {
             MixinHooks.BannerStuff.use(pState, pLevel, pPos, pPlayer, pHand, pHit, cir);
         }
     }

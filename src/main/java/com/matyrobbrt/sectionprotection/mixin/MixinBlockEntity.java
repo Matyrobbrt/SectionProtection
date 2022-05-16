@@ -1,6 +1,7 @@
 package com.matyrobbrt.sectionprotection.mixin;
 
 import com.matyrobbrt.sectionprotection.MixinHooks;
+import com.matyrobbrt.sectionprotection.api.BannerExtension;
 import net.minecraft.world.level.block.entity.BannerBlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import org.spongepowered.asm.mixin.Mixin;
@@ -19,6 +20,17 @@ public abstract class MixinBlockEntity {
     private void sectionprotection$setRemoved(CallbackInfo ci) {
         if (((Object) this) instanceof BannerBlockEntity ban) {
             MixinHooks.BannerStuff.setRemoved(ban);
+        }
+    }
+
+    @Inject(
+        at = @At("TAIL"),
+        method = "onChunkUnloaded()V",
+        remap = false
+    )
+    private void sectionprotection$unloaded(CallbackInfo ci) {
+        if (this instanceof BannerExtension ext) {
+            MixinHooks.BannerStuff.onUnloaded(ext);
         }
     }
 
