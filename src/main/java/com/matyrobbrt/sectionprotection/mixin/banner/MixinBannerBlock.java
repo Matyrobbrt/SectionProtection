@@ -12,6 +12,8 @@ import net.minecraft.network.chat.TextComponent;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.Explosion;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.AbstractBannerBlock;
 import net.minecraft.world.level.block.Block;
@@ -23,6 +25,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicLong;
 
 @Mixin(AbstractBannerBlock.class)
 public abstract class MixinBannerBlock extends Block {
@@ -64,4 +67,16 @@ public abstract class MixinBannerBlock extends Block {
         }
     }
 
+    @Override // Default method in interface... can't do what we do for `getDrops`
+    public float getExplosionResistance(BlockState state, BlockGetter level, BlockPos pos, Explosion explosion) {
+        var res = super.getExplosionResistance(state, level, pos, explosion);
+        final var beOpt = level.getBlockEntity(pos, BlockEntityType.BANNER);
+        if (beOpt.isPresent()) {
+            final var be = beOpt.get();
+            if (((BannerExtension) be).isProtectionBanner()) {
+                return 3600000.0F;
+            }
+        }
+        return res;
+    }
 }

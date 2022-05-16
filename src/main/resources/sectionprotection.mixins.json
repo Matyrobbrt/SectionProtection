@@ -8,9 +8,11 @@
     "MixinBlockBehaviour",
     "MixinBlockEntity",
     "MixinBlockItem",
-    "MixinPrimedTnt",
+    "MixinExplosion",
+
     "banner.MixinBannerBE",
     "banner.MixinBannerBlock",
+
     "lectern.MixinLecternBE",
     "lectern.MixinLecternBlock"
   ],

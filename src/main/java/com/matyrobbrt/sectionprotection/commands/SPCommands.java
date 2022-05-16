@@ -13,12 +13,9 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.arguments.DimensionArgument;
 import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
 import net.minecraft.commands.arguments.coordinates.Coordinates;
-import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.TextComponent;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.level.Level;
 import net.minecraftforge.event.RegisterCommandsEvent;
 
 import static net.minecraft.commands.Commands.*;
@@ -26,7 +23,6 @@ import static net.minecraft.commands.arguments.coordinates.BlockPosArgument.ERRO
 import static net.minecraft.commands.arguments.coordinates.BlockPosArgument.ERROR_OUT_OF_WORLD;
 
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 public class SPCommands {
 
@@ -36,10 +32,8 @@ public class SPCommands {
             .then(literal("chunk")
                     .then(literal("owner")
                         .then(argument("pos", BlockPosArgument.blockPos())
-                            .requires(s -> s.hasPermission(LEVEL_MODERATORS))
                             .executes(ctx -> getChunkOwner(ctx.getSource().getLevel(), ctx))
                                 .then(argument("dimension", DimensionArgument.dimension())
-                                    .requires(s -> s.hasPermission(LEVEL_MODERATORS))
                                     .executes(ctx -> getChunkOwner(DimensionArgument.getDimension(ctx, "dimension"), ctx))))
                     )
             );
