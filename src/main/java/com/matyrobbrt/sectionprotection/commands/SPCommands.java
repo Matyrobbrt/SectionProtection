@@ -81,7 +81,7 @@ public class SPCommands {
 
     private static int guideBook(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         if (context.getSource().getEntity() instanceof Player player) {
-            if (player.getInventory().add(Constants.SP_BOOK)) {
+            if (player.getInventory().add(Constants.SP_BOOK.copy())) {
                 context.getSource().sendSuccess(new TextComponent("You have been given a SectionProtection guide book!"), true);
             }
         }
