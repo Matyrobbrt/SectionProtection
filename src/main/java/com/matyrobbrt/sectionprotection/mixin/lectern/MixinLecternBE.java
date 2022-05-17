@@ -2,6 +2,7 @@ package com.matyrobbrt.sectionprotection.mixin.lectern;
 
 import com.google.common.collect.Lists;
 import com.google.gson.JsonObject;
+import com.matyrobbrt.sectionprotection.FakePlayerHolder;
 import com.matyrobbrt.sectionprotection.util.Constants;
 import com.matyrobbrt.sectionprotection.SectionProtection;
 import com.matyrobbrt.sectionprotection.api.ClaimedChunk;
@@ -23,6 +24,8 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.entity.LecternBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraftforge.common.util.FakePlayer;
+import net.minecraftforge.common.util.FakePlayerFactory;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -35,12 +38,14 @@ import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.UUID;
 
 @Mixin(LecternBlockEntity.class)
 public abstract class MixinLecternBE extends BlockEntity implements LecternExtension {
     private static final String sp$REQUEST_UUID_URL = "https://api.mojang.com/users/profiles/minecraft/";
+    private static final String sp$FAKE_PLAYER_SUFFIX = "-FP";
 
     public MixinLecternBE(BlockEntityType<?> pType, BlockPos pWorldPosition, BlockState pBlockState) {
         super(pType, pWorldPosition, pBlockState);
@@ -121,21 +126,29 @@ public abstract class MixinLecternBE extends BlockEntity implements LecternExten
                 })
                 .toList();
         final List<UUID> players = new ArrayList<>();
-        for (final var name : list) {
-            final var profile = level.getServer().getProfileCache().get(name)
-                .map(GameProfile::getId)
-                .or(() -> {
-                    try {
-                        final var url = new URL(sp$REQUEST_UUID_URL + name);
-                        try (final var reader = new BufferedReader(new InputStreamReader(url.openStream()))) {
-                            final var json = Constants.GSON.fromJson(reader, JsonObject.class);
-                            return Optional.of(UUID.fromString(json.get("id").getAsString()));
-                        }
-                    } catch (Exception e) {
-                        SectionProtection.LOGGER.error("Error trying to resolve player UUID for name {}: ", name, e);
-                    }
-                    return Optional.empty();
-                });
+        for (var name : list) {
+            name = name.toUpperCase(Locale.ROOT);
+            final Optional<UUID> profile;
+            if (name.endsWith(sp$FAKE_PLAYER_SUFFIX)) {
+                profile = Optional.ofNullable(FakePlayerHolder.getFakePlayer(name.substring(0, name.length() - sp$FAKE_PLAYER_SUFFIX.length())))
+                        .map(FakePlayer::getUUID);
+            } else {
+                final String finalName = name;
+                profile = level.getServer().getProfileCache().get(name)
+                        .map(GameProfile::getId)
+                        .or(() -> {
+                            try {
+                                final var url = new URL(sp$REQUEST_UUID_URL + finalName);
+                                try (final var reader = new BufferedReader(new InputStreamReader(url.openStream()))) {
+                                    final var json = Constants.GSON.fromJson(reader, JsonObject.class);
+                                    return Optional.of(UUID.fromString(json.get("id").getAsString()));
+                                }
+                            } catch (Exception e) {
+                                SectionProtection.LOGGER.error("Error trying to resolve player UUID for name {}: ", finalName, e);
+                            }
+                            return Optional.empty();
+                        });
+            }
             profile.ifPresent(players::add);
         }
 
@@ -174,11 +187,21 @@ public abstract class MixinLecternBE extends BlockEntity implements LecternExten
         Lists.partition(newTeam, 6).forEach(sub -> {
             var str = "";
             for (int i = 0; i < sub.size(); i++) {
-                final var name = Utils.getPlayerName(level.getServer(), sub.get(i));
+                final var uuid = sub.get(i);
+                var name = Utils.getPlayerName(level.getServer(), uuid);
                 if (name.isPresent()) {
                     str = str + name.get();
                     if (i != sub.size() - 1) {
                         str = str + "\n";
+                    }
+                } else {
+                    // Try a fake player
+                    final var fakePlayer = FakePlayerHolder.getFakePlayer(uuid);
+                    if (fakePlayer != null) {
+                        str = str + fakePlayer.getGameProfile().getName() + sp$FAKE_PLAYER_SUFFIX;
+                        if (i != sub.size() - 1) {
+                            str = str + "\n";
+                        }
                     }
                 }
             }

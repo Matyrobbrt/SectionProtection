@@ -21,6 +21,7 @@ import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.capabilities.RegisterCapabilitiesEvent;
 import net.minecraftforge.event.AttachCapabilitiesEvent;
 import net.minecraftforge.event.entity.item.ItemTossEvent;
+import net.minecraftforge.event.server.ServerStartedEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.IExtensionPoint;
 import net.minecraftforge.fml.ModLoadingContext;
@@ -71,6 +72,13 @@ public class SectionProtection {
         final var item = event.getEntityItem().getItem();
         if (item.getItem() == Items.WRITTEN_BOOK && item.getOrCreateTag().contains(Constants.SP_GUIDE_TAG)) {
             event.getEntityItem().kill();
+        }
+    }
+
+    @SubscribeEvent
+    static void onServerStart(final ServerStartedEvent event) {
+        if (ServerConfig.ALWAYS_ALLOW_FAKE_PLAYERS.get()) {
+            LOGGER.warn("All FakePlayers have been granted full permission in claimed chunks! This is a very dangerous config option to enable, use at your own risk.");
         }
     }
 

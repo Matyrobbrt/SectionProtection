@@ -18,7 +18,7 @@ public class ServerConfig {
     public static final ForgeConfigSpec SPEC;
 
     // General
-    public static final ForgeConfigSpec.BooleanValue ALLOW_FAKE_PLAYERS;
+    public static final ForgeConfigSpec.BooleanValue ALWAYS_ALLOW_FAKE_PLAYERS;
     public static final ForgeConfigSpec.ConfigValue<List<? extends String>> CONVERSION_ITEMS;
 
     // Claiming
@@ -33,8 +33,9 @@ public class ServerConfig {
 
         builder.push("general");
         {
-            ALLOW_FAKE_PLAYERS = builder.comment("If fake players should be allowed to interact with claimed chunks.")
-                    .define("allow_fake_players", true);
+            ALWAYS_ALLOW_FAKE_PLAYERS = builder.comment("If all fake players should be allowed to interact with claimed chunks.",
+                    "Note: Enabling this is VERY but VERY risky, as it makes griefing protection useless. Players should whitelist a fake player only if they want to.")
+                    .define("always_allow_fake_players", false);
 
             CONVERSION_ITEMS = builder.comment("A list of items that can be used for converting banners and lecterns into protecting ones.",
                     "Note: While this config exists, items in the tag \"sectionprotection:conversion_item\" will be accepted as well.")

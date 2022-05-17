@@ -1,5 +1,6 @@
 package com.matyrobbrt.sectionprotection.commands;
 
+import com.matyrobbrt.sectionprotection.FakePlayerHolder;
 import com.matyrobbrt.sectionprotection.util.Constants;
 import com.matyrobbrt.sectionprotection.SectionProtection;
 import com.matyrobbrt.sectionprotection.api.ClaimedChunk;
@@ -15,6 +16,7 @@ import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
 import net.minecraft.commands.arguments.coordinates.Coordinates;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.ClickEvent;
+import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.server.level.ServerLevel;
@@ -48,11 +50,34 @@ public class SPCommands {
             .then(literal("version")
                     .executes(SPCommands::version))
             .then(literal("guidebook")
-                    .executes(SPCommands::guideBook));
+                    .executes(SPCommands::guideBook))
+            .then(literal("fake_players")
+                    .then(literal("list")
+                            .executes(SPCommands::listFakePlayers)));
 
         event.getDispatcher().register(cmd);
     }
     //@formatter:on
+
+    private static int listFakePlayers(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        MutableComponent text = new TextComponent("FakePlayers present in this server: ");
+        final var all = FakePlayerHolder.getAll();
+        if (all.isEmpty()) {
+            text = new TextComponent("No FakePlayers are present in this server.");
+        }
+        for (final var it = all.iterator(); it.hasNext();) {
+            final var fake = it.next();
+            text = text.append(fake.getName().copy()
+                    .withStyle(Constants.WITH_PLAYER_NAME)
+                    .withStyle(s -> s.withClickEvent(new ClickEvent(ClickEvent.Action.COPY_TO_CLIPBOARD, fake.getGameProfile().getName())))
+                    .withStyle(s -> s.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new TextComponent(fake.getUUID().toString())))));
+            if (it.hasNext()) {
+                text = text.append(", ");
+            }
+        }
+        context.getSource().sendSuccess(text, true);
+        return Command.SINGLE_SUCCESS;
+    }
 
     private static int guideBook(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         if (context.getSource().getEntity() instanceof Player player) {

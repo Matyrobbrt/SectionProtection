@@ -87,7 +87,7 @@ public class ProtectionListeners {
 
     private static <T extends Event> void checkCanExecute(final T event, final Function<T, BlockPos> pos,
         final ServerPlayer player) {
-        if (ServerConfig.ALLOW_FAKE_PLAYERS.get() && player instanceof FakePlayer) {
+        if (ServerConfig.ALWAYS_ALLOW_FAKE_PLAYERS.get() && player instanceof FakePlayer) {
             return;
         }
         if (!player.isCreative()) {

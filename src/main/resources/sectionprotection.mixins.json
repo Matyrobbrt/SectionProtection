@@ -9,6 +9,7 @@
     "MixinBlockEntity",
     "MixinBlockItem",
     "MixinExplosion",
+    "MixinFakePlayer",
 
     "banner.MixinBannerBE",
     "banner.MixinBannerBlock",
