@@ -20,7 +20,6 @@ import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.LecternBlock;
 import net.minecraft.world.level.block.entity.BannerBlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
@@ -32,16 +31,20 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicReference;
 
 public class MixinHooks {
 
     public static void checkBlockItemIsBanner(BlockItem item, UseOnContext pContext, CallbackInfoReturnable<InteractionResult> cir) {
         if (item.getBlock() instanceof net.minecraft.world.level.block.BannerBlock bannerBlock && pContext.getItemInHand().getOrCreateTag().contains(Constants.PROTECTION_BANNER) && !pContext.getLevel().isClientSide()) {
+            final var chunk = pContext.getLevel().getChunkAt(pContext.getClickedPos());
+            if (!SectionProtection.canClaimChunk(pContext.getPlayer(), chunk)) {
+                cir.setReturnValue(InteractionResult.FAIL);
+                return;
+            }
             final var banners = Banners.get(Objects.requireNonNull(pContext.getLevel().getServer()));
             final var pattern = new Banner(BannerBlockEntity.getItemPatterns(pContext.getItemInHand()), bannerBlock.getColor());
             final var team = banners.getMembers(pattern);
-            pContext.getLevel().getChunkAt(pContext.getClickedPos()).getCapability(ClaimedChunk.CAPABILITY)
+            chunk.getCapability(ClaimedChunk.CAPABILITY)
                     .ifPresent(cl -> {
                         if (cl.getOwningBanner() == null)
                             return;
@@ -104,13 +107,18 @@ public class MixinHooks {
         public static void use(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, InteractionHand pHand, BlockHitResult pHit, CallbackInfoReturnable<InteractionResult> cir) {
             if (pLevel.isClientSide())
                 return;
-            pLevel.getChunkAt(pPos).getCapability(ClaimedChunk.CAPABILITY).ifPresent(cap -> {
+            final var chunk = pLevel.getChunkAt(pPos);
+            chunk.getCapability(ClaimedChunk.CAPABILITY).ifPresent(cap -> {
                 if (cap.getOwningBanner() == null) {
                     pLevel.getBlockEntity(pPos, BlockEntityType.BANNER).ifPresent(banner -> {
                         final var extensionBanner = ((BannerExtension) banner);
                         final var stack = pPlayer.getItemInHand(pHand);
                         final var pattern = com.matyrobbrt.sectionprotection.api.Banner.from(banner.getPatterns());
-                        if (!extensionBanner.isProtectionBanner() && SectionProtection.isConversionItem(stack)) {
+                        if (
+                            !extensionBanner.isProtectionBanner() &&
+                            SectionProtection.isConversionItem(stack) &&
+                            SectionProtection.canClaimChunk(pPlayer, chunk)
+                        ) {
                             final var banners = Banners.get(Objects.requireNonNull(pLevel.getServer()));
                             final var team = banners.getMembers(pattern);
                             if (team != null) {

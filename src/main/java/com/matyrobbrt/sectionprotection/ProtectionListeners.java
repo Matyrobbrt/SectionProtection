@@ -14,6 +14,7 @@ import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.server.level.ServerPlayer;
 
+import net.minecraft.world.entity.npc.Villager;
 import net.minecraftforge.common.util.FakePlayer;
 import net.minecraftforge.event.entity.EntityMobGriefingEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
@@ -63,9 +64,15 @@ public class ProtectionListeners {
 
     @SubscribeEvent
     static void griefing(final EntityMobGriefingEvent event) {
-        if (event.getEntity().level.isClientSide())
+        if (event.getEntity().level.isClientSide() || event.getEntity() instanceof Villager)
             return;
-        event.getEntity().level.getChunkAt(event.getEntity().blockPosition()).getCapability(ClaimedChunk.CAPABILITY)
+
+        final var chunk = event.getEntity().level.getChunkAt(event.getEntity().blockPosition());
+        if (ServerConfig.DEFAULT_MOB_GRIEFING_PROTECTED.get().contains(chunk.getPos())) {
+            event.setResult(Result.DENY);
+            return;
+        }
+        chunk.getCapability(ClaimedChunk.CAPABILITY)
             .ifPresent(claimed -> {
                 if (claimed.getOwningBanner() != null) {
                     event.setResult(Result.DENY);

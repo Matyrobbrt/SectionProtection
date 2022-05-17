@@ -9,6 +9,8 @@ import net.minecraft.nbt.StringTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.chunk.LevelChunk;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -56,4 +58,11 @@ public class Utils {
         stack.getOrCreateTag().put("display", displayTag);
     }
 
+    public static ChunkPos chunkPosFromString(String str) {
+        final var spl = str.split(",");
+        if (spl.length != 2) {
+            return ChunkPos.ZERO;
+        }
+        return new ChunkPos(Integer.parseInt(spl[0]), Integer.parseInt(spl[1]));
+    }
 }

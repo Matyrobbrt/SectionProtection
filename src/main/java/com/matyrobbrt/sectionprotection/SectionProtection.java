@@ -4,9 +4,12 @@ import com.matyrobbrt.sectionprotection.api.ClaimedChunk;
 import com.matyrobbrt.sectionprotection.api.OneCapProvider;
 import com.matyrobbrt.sectionprotection.commands.SPCommands;
 import com.mojang.logging.LogUtils;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.Registry;
+import net.minecraft.network.chat.TextComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -22,6 +25,8 @@ import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.network.NetworkConstants;
 import org.slf4j.Logger;
+
+import javax.annotation.Nullable;
 
 // TODO lazy translation if client has mod present
 @Mod(SectionProtection.MOD_ID)
@@ -39,6 +44,7 @@ public class SectionProtection {
 
         ModLoadingContext.get().registerConfig(ModConfig.Type.SERVER, ServerConfig.SPEC, MOD_ID + "-server.toml");
 
+        bus.register(ServerConfig.class);
         bus.addListener(SectionProtection::registerCaps);
 
         MinecraftForge.EVENT_BUS.addListener(SPCommands::register);
@@ -57,9 +63,17 @@ public class SectionProtection {
         event.register(ClaimedChunk.class);
     }
 
-    @SuppressWarnings("ALL")
+    @SuppressWarnings("all")
     public static boolean isConversionItem(ItemStack stack) {
         return stack.is(IS_CONVERSION_ITEM) || ServerConfig.CONVERSION_ITEMS.get()
             .stream().anyMatch(s -> stack.getItem().getRegistryName().toString().equals(s));
+    }
+
+    public static boolean canClaimChunk(@Nullable Player player, LevelChunk chunk) {
+        final var canClaim = ServerConfig.UNCLAIMABLE_CHUNKS.get().contains(chunk.getPos());
+        if (!canClaim && player != null)
+            player.displayClientMessage(new TextComponent("This chunk cannot be claimed!")
+                    .withStyle(ChatFormatting.RED), true);
+        return canClaim;
     }
 }

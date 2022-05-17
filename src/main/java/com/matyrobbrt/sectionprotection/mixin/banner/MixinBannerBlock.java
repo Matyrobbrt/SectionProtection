@@ -1,6 +1,7 @@
 package com.matyrobbrt.sectionprotection.mixin.banner;
 
 import com.matyrobbrt.sectionprotection.Constants;
+import com.matyrobbrt.sectionprotection.SectionProtection;
 import com.matyrobbrt.sectionprotection.api.Banner;
 import com.matyrobbrt.sectionprotection.api.BannerExtension;
 import com.matyrobbrt.sectionprotection.api.ClaimedChunk;
@@ -25,7 +26,6 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicLong;
 
 @Mixin(AbstractBannerBlock.class)
 public abstract class MixinBannerBlock extends Block {
@@ -47,7 +47,9 @@ public abstract class MixinBannerBlock extends Block {
                 if (isProtection) {
                     ((BannerExtension) banner).setProtectionBanner(true);
                     if (pPlacer instanceof Player player) {
-                        pLevel.getChunkAt(pPos).getCapability(ClaimedChunk.CAPABILITY).ifPresent(cap -> {
+                        final var chunk = pLevel.getChunkAt(pPos);
+                        if (!SectionProtection.canClaimChunk(player, chunk)) return;
+                        chunk.getCapability(ClaimedChunk.CAPABILITY).ifPresent(cap -> {
                             final var banners = Banners.get(Objects.requireNonNull(pLevel.getServer()));
                             final var pattern = Banner.from(banner.getPatterns());
                             final var team = banners.getMembers(pattern);
