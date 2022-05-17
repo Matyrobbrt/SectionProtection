@@ -13,6 +13,7 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.arguments.DimensionArgument;
 import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
 import net.minecraft.commands.arguments.coordinates.Coordinates;
+import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.server.level.ServerLevel;
@@ -36,12 +37,31 @@ public class SPCommands {
                                 .then(argument("dimension", DimensionArgument.dimension())
                                     .executes(ctx -> getChunkOwner(DimensionArgument.getDimension(ctx, "dimension"), ctx))))
                     )
+                    .then(literal("pos")
+                        .then(argument("pos", BlockPosArgument.blockPos())
+                            .executes(SPCommands::getChunkPos)))
             );
 
         event.getDispatcher().register(cmd);
     }
     //@formatter:on
 
+    private static int getChunkPos(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        final var blockpos = context.getArgument("pos", Coordinates.class).getBlockPos(context.getSource());
+        if (!context.getSource().getLevel().hasChunkAt(blockpos)) {
+            throw ERROR_NOT_LOADED.create();
+        } else if (!context.getSource().getLevel().isInWorldBounds(blockpos)) {
+            throw ERROR_OUT_OF_WORLD.create();
+        }
+        final var chunkPos = context.getSource().getLevel().getChunkAt(blockpos).getPos();
+        final var pos = chunkPos.x + "," + chunkPos.z;
+        context.getSource().sendSuccess(new TextComponent("The positions of the chunk containing the block with the position ")
+                .append(new TextComponent(blockpos.toShortString()).withStyle(ChatFormatting.AQUA))
+                .append(" are ")
+                .append(new TextComponent(pos).withStyle(s -> s.withColor(ChatFormatting.GOLD).withClickEvent(new ClickEvent(ClickEvent.Action.COPY_TO_CLIPBOARD, pos)))), true);
+        return Command.SINGLE_SUCCESS;
+    }
+    
     private static int getChunkOwner(ServerLevel dimension, CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         final var blockpos = context.getArgument("pos", Coordinates.class).getBlockPos(context.getSource());
         if (!dimension.hasChunkAt(blockpos)) {
