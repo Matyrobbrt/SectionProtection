@@ -60,7 +60,7 @@ public abstract class MixinLecternBlock extends Block {
      * with the player, event if the player is available.
      * @author matyrobbrt - SectionProtection
      */
-    @Overwrite(aliases = "Lnet/minecraft/world/level/block/LecternBlock;placeBook(Lnet/minecraft/world/entity/player/Player;Lnet/minecraft/world/level/Level;Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/level/block/state/BlockState;Lnet/minecraft/world/item/ItemStack;)V")
+    @Overwrite
     private static void placeBook(@javax.annotation.Nullable Player pPlayer, Level pLevel, BlockPos pPos, BlockState pState, ItemStack pBook) {
         BlockEntity blockentity = pLevel.getBlockEntity(pPos);
         if (blockentity instanceof LecternBlockEntity lecternblockentity) {
