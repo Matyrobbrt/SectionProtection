@@ -3,6 +3,9 @@ package com.matyrobbrt.sectionprotection;
 import com.matyrobbrt.sectionprotection.api.ClaimedChunk;
 import com.matyrobbrt.sectionprotection.api.OneCapProvider;
 import com.matyrobbrt.sectionprotection.commands.SPCommands;
+import com.matyrobbrt.sectionprotection.util.Constants;
+import com.matyrobbrt.sectionprotection.util.SPVersion;
+import com.matyrobbrt.sectionprotection.util.Utils;
 import com.mojang.logging.LogUtils;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.Registry;
@@ -17,6 +20,7 @@ import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.capabilities.RegisterCapabilitiesEvent;
 import net.minecraftforge.event.AttachCapabilitiesEvent;
+import net.minecraftforge.event.entity.item.ItemTossEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.IExtensionPoint;
 import net.minecraftforge.fml.ModLoadingContext;
@@ -27,11 +31,14 @@ import net.minecraftforge.network.NetworkConstants;
 import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
+import java.util.jar.Manifest;
 
 // TODO lazy translation if client has mod present
 @Mod(SectionProtection.MOD_ID)
 public class SectionProtection {
 
+    @Nullable
+    public static final SPVersion VERSION;
     public static final String MOD_ID = "sectionprotection";
     public static final Logger LOGGER = LogUtils.getLogger();
 
@@ -59,6 +66,14 @@ public class SectionProtection {
         event.addCapability(CAP_ID, new OneCapProvider<>(ClaimedChunk.CAPABILITY, ClaimedChunk.Impl::new));
     }
 
+    @SubscribeEvent
+    static void onItemToss(final ItemTossEvent event) {
+        final var item = event.getEntityItem().getItem();
+        if (item.getItem() == Items.WRITTEN_BOOK && item.getOrCreateTag().contains(Constants.SP_GUIDE_TAG)) {
+            event.getEntityItem().kill();
+        }
+    }
+
     static void registerCaps(final RegisterCapabilitiesEvent event) {
         event.register(ClaimedChunk.class);
     }
@@ -75,5 +90,18 @@ public class SectionProtection {
             player.displayClientMessage(new TextComponent("This chunk cannot be claimed!")
                     .withStyle(ChatFormatting.RED), true);
         return canClaim;
+    }
+
+    static {
+        var resource = SectionProtection.class.getResourceAsStream("/META-INF/MANIFEST.MF");
+        if (resource == null) {
+            resource = SectionProtection.class.getResourceAsStream("META-INF/MANIFEST.MF");
+        }
+        if (resource == null) {
+            VERSION = null;
+        } else {
+            final var finalResource = resource;
+            VERSION = Utils.getOrNull(() -> SPVersion.from(new Manifest(finalResource)));
+        }
     }
 }

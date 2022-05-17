@@ -1,6 +1,6 @@
 package com.matyrobbrt.sectionprotection.commands;
 
-import com.matyrobbrt.sectionprotection.Constants;
+import com.matyrobbrt.sectionprotection.util.Constants;
 import com.matyrobbrt.sectionprotection.SectionProtection;
 import com.matyrobbrt.sectionprotection.api.ClaimedChunk;
 import com.matyrobbrt.sectionprotection.util.Utils;
@@ -13,10 +13,12 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.arguments.DimensionArgument;
 import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
 import net.minecraft.commands.arguments.coordinates.Coordinates;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.event.RegisterCommandsEvent;
 
 import static net.minecraft.commands.Commands.*;
@@ -32,22 +34,52 @@ public class SPCommands {
         final var cmd = literal(SectionProtection.MOD_ID)
             .then(literal("chunk")
                     .then(literal("owner")
+                        .executes(ctx -> getChunkOwner(new BlockPos(ctx.getSource().getPosition()), ctx.getSource().getLevel(), ctx))
                         .then(argument("pos", BlockPosArgument.blockPos())
-                            .executes(ctx -> getChunkOwner(ctx.getSource().getLevel(), ctx))
+                            .executes(ctx -> getChunkOwner(ctx.getArgument("pos", Coordinates.class), ctx.getSource().getLevel(), ctx))
                                 .then(argument("dimension", DimensionArgument.dimension())
-                                    .executes(ctx -> getChunkOwner(DimensionArgument.getDimension(ctx, "dimension"), ctx))))
+                                    .executes(ctx -> getChunkOwner(ctx.getArgument("pos", Coordinates.class), DimensionArgument.getDimension(ctx, "dimension"), ctx))))
                     )
                     .then(literal("pos")
+                        .executes(ctx -> getChunkPos(new BlockPos(ctx.getSource().getPosition()), ctx))
                         .then(argument("pos", BlockPosArgument.blockPos())
-                            .executes(SPCommands::getChunkPos)))
-            );
+                            .executes(ctx -> getChunkPos(ctx.getArgument("pos", Coordinates.class).getBlockPos(ctx.getSource()), ctx))))
+            )
+            .then(literal("version")
+                    .executes(SPCommands::version))
+            .then(literal("guidebook")
+                    .executes(SPCommands::guideBook));
 
         event.getDispatcher().register(cmd);
     }
     //@formatter:on
 
-    private static int getChunkPos(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
-        final var blockpos = context.getArgument("pos", Coordinates.class).getBlockPos(context.getSource());
+    private static int guideBook(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        if (context.getSource().getEntity() instanceof Player player) {
+            if (player.getInventory().add(Constants.SP_BOOK)) {
+                context.getSource().sendSuccess(new TextComponent("You have been given a SectionProtection guide book!"), true);
+            }
+        }
+        return Command.SINGLE_SUCCESS;
+    }
+
+    private static int version(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        if (SectionProtection.VERSION == null) {
+            context.getSource().sendFailure(new TextComponent("The SectionProtection version cannot be determined in a development environment!"));
+            return 1;
+        }
+        final var text = new TextComponent("SectionProtection version information:")
+            .append("\n")
+            .append("Mod Version: ").append(new TextComponent(SectionProtection.VERSION.version()).withStyle(ChatFormatting.AQUA))
+            .append("\n")
+            .append("Timestamp: ").append(new TextComponent(SectionProtection.VERSION.timestamp()).withStyle(ChatFormatting.AQUA))
+            .append("\n")
+            .append("Commit ID: ").append(new TextComponent(SectionProtection.VERSION.commitId()).withStyle(ChatFormatting.AQUA));
+        context.getSource().sendSuccess(text, false);
+        return Command.SINGLE_SUCCESS;
+    }
+
+    private static int getChunkPos(BlockPos blockpos, CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         if (!context.getSource().getLevel().hasChunkAt(blockpos)) {
             throw ERROR_NOT_LOADED.create();
         } else if (!context.getSource().getLevel().isInWorldBounds(blockpos)) {
@@ -61,9 +93,12 @@ public class SPCommands {
                 .append(new TextComponent(pos).withStyle(s -> s.withColor(ChatFormatting.GOLD).withClickEvent(new ClickEvent(ClickEvent.Action.COPY_TO_CLIPBOARD, pos)))), true);
         return Command.SINGLE_SUCCESS;
     }
-    
-    private static int getChunkOwner(ServerLevel dimension, CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
-        final var blockpos = context.getArgument("pos", Coordinates.class).getBlockPos(context.getSource());
+
+    private static int getChunkOwner(Coordinates coords, ServerLevel dimension, CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        return getChunkOwner(coords.getBlockPos(context.getSource()), dimension, context);
+    }
+
+    private static int getChunkOwner(BlockPos blockpos, ServerLevel dimension, CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         if (!dimension.hasChunkAt(blockpos)) {
             throw ERROR_NOT_LOADED.create();
         } else if (!dimension.isInWorldBounds(blockpos)) {
@@ -77,7 +112,9 @@ public class SPCommands {
                     .flatMap(uuid -> Utils.getPlayerName(context.getSource().getServer(), uuid).stream())
                     .map(name -> new TextComponent(name).withStyle(Constants.WITH_PLAYER_NAME))
                     .toList();
-                MutableComponent text = new TextComponent("That chunk is owned by: ");
+                MutableComponent text = new TextComponent("The chunk at ")
+                        .append(new TextComponent(blockpos.toShortString()).withStyle(ChatFormatting.AQUA))
+                        .append(" is owned by: ");
                 for (var i = 0; i < members.size(); i++) {
                     text = text.append(members.get(i));
                     if (i == members.size() - 2) {

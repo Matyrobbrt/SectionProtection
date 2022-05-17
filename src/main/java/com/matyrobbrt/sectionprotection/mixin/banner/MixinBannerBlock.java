@@ -1,6 +1,6 @@
 package com.matyrobbrt.sectionprotection.mixin.banner;
 
-import com.matyrobbrt.sectionprotection.Constants;
+import com.matyrobbrt.sectionprotection.util.Constants;
 import com.matyrobbrt.sectionprotection.SectionProtection;
 import com.matyrobbrt.sectionprotection.api.Banner;
 import com.matyrobbrt.sectionprotection.api.BannerExtension;

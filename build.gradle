@@ -1,25 +1,15 @@
-buildscript {
-    repositories {
-        // These repositories are only for Gradle plugins, put any other repositories in the repository block further below
-        maven { url = 'https://maven.minecraftforge.net' }
-		maven { url = 'https://maven.parchmentmc.org' }
-        maven { url = 'https://repo.spongepowered.org/repository/maven-public/' }
-        mavenCentral()
-    }
-    dependencies {
-        classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '5.1.+', changing: true
-		classpath 'org.parchmentmc:librarian:1.+'
-        classpath group: 'org.spongepowered', name: 'mixingradle', version: '0.7-SNAPSHOT'
-    }
-}
-// Only edit below this line, the above code adds and enables the necessary things for Forge to be setup.
-plugins {
-    id 'eclipse'
-    id 'maven-publish'
-}
-apply plugin: 'net.minecraftforge.gradle'
-apply plugin: 'org.parchmentmc.librarian.forgegradle'
-apply plugin: 'org.spongepowered.mixin'
+import java.time.OffsetDateTime
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
+
+var applyPlugins = [
+    'eclipse', 'idea', 'maven-publish',
+    'net.minecraftforge.gradle', 'org.parchmentmc.librarian.forgegradle',
+    'org.spongepowered.mixin'
+]
+applyPlugins.forEach(pl -> apply plugin: pl)
+
+apply from: 'https://raw.githubusercontent.com/sciwhiz12/Concord/dev/1.18.x/gradle/version.gradle'
 
 def mcVersion = properties.get('mc_version')
 def modid = properties.get('mod_id')
@@ -42,13 +32,9 @@ minecraft {
     mappings channel: 'parchment', version: '2022.05.02-1.18.2'
 
     runs {
-        client {
-            workingDirectory project.file('run')
-
+        all {
             property 'forge.logging.markers', 'REGISTRIES'
-
             property 'forge.logging.console.level', 'debug'
-
             property 'forge.enabledGameTestNamespaces', 'sectionprotection'
             arg "-mixin.config=${modid}.mixins.json"
 
@@ -57,59 +43,25 @@ minecraft {
                     source sourceSets.main
                 }
             }
+        }
+
+        client {
+            workingDirectory project.file('run')
         }
 
         server {
             workingDirectory project.file('run')
-
-            property 'forge.logging.markers', 'REGISTRIES'
-
-            property 'forge.logging.console.level', 'debug'
-
-            // Comma-separated list of namespaces to load gametests from. Empty = all namespaces.
-            property 'forge.enabledGameTestNamespaces', 'sectionprotection'
-            arg "-mixin.config=${modid}.mixins.json"
-
-            mods {
-                sectionprotection {
-                    source sourceSets.main
-                }
-            }
         }
 
         gameTestServer {
             workingDirectory project.file('run')
-
-            property 'forge.logging.markers', 'REGISTRIES'
-
-            property 'forge.logging.console.level', 'debug'
-
-            property 'forge.enabledGameTestNamespaces', 'sectionprotection'
-            arg "-mixin.config=${modid}.mixins.json"
-
-            mods {
-                sectionprotection {
-                    source sourceSets.main
-                }
-            }
         }
 
         data {
             workingDirectory project.file('run')
 
-            property 'forge.logging.markers', 'REGISTRIES'
-
-            property 'forge.logging.console.level', 'debug'
-            arg "-mixin.config=${modid}.mixins.json"
-
             // Specify the modid for data generation, where to output the resulting resource, and where to look for existing resources.
             args '--mod', modid, '--all', '--output', file('src/generated/resources/'), '--existing', file('src/main/resources/')
-
-            mods {
-                sectionprotection {
-                    source sourceSets.main
-                }
-            }
         }
     }
 }
@@ -123,27 +75,37 @@ dependencies {
     annotationProcessor 'org.spongepowered:mixin:0.8.4:processor'
 }
 
-// Example for how to get properties into the manifest for reading at runtime.
-jar {
-    manifest {
-        attributes([
-                "Specification-Title"     : "SectionProtection",
-                "Specification-Vendor"    : "Matyrobbrt",
-                "Specification-Version"   : "1", // We are version 1 of ourselves
-                "Implementation-Title"    : project.name,
-                "Implementation-Version"  : project.jar.archiveVersion,
-                "Implementation-Vendor"   : "Matyrobbrt",
-                "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ"),
-                "MixinConfigs"            : "${modid}.mixins.json"
-        ])
+final var expands = [
+    'version': project.version,
+    'modid': modid
+]
+
+processResources {
+    filesMatching('META-INF/mods.toml') {
+        expand expands
     }
 }
 
-// Example configuration to allow publishing using the maven-publish plugin
-// This is the preferred method to reobfuscate your jar file
+final var actualDateTime = OffsetDateTime.now(ZoneOffset.UTC).withNano(0)
+final var currentDateTime = DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(actualDateTime)
+def manifestAttributes = [
+    "Specification-Title"     : "SectionProtection",
+    "Specification-Vendor"    : "Matyrobbrt",
+    "Specification-Version"   : "1",
+    "Implementation-Title"    : project.name,
+    "Implementation-Version"  : project.jar.archiveVersion,
+    "Implementation-Vendor"   : "Matyrobbrt",
+    "Timestamp"               : currentDateTime,
+    "Git-Commit"              : versions.getCommitId(),
+    "Git-Commit-Timestamp"    : versions.getCommitTimestamp(),
+    "MixinConfigs"            : "${modid}.mixins.json"
+] as Map
+
+jar {
+    manifest.attributes(manifestAttributes)
+}
+
 jar.finalizedBy('reobfJar')
-// However if you are in a multi-project build, dev time needs unobfed jar files, so you can delay the obfuscation until publishing by doing
-// publish.dependsOn('reobfJar')
 
 publishing {
     publications {

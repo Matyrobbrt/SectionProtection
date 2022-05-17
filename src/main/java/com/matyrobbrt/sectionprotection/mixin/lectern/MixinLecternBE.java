@@ -2,7 +2,7 @@ package com.matyrobbrt.sectionprotection.mixin.lectern;
 
 import com.google.common.collect.Lists;
 import com.google.gson.JsonObject;
-import com.matyrobbrt.sectionprotection.Constants;
+import com.matyrobbrt.sectionprotection.util.Constants;
 import com.matyrobbrt.sectionprotection.SectionProtection;
 import com.matyrobbrt.sectionprotection.api.ClaimedChunk;
 import com.matyrobbrt.sectionprotection.api.LecternExtension;
@@ -18,6 +18,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.WritableBookItem;
+import net.minecraft.world.item.WrittenBookItem;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.entity.LecternBlockEntity;
@@ -95,7 +96,7 @@ public abstract class MixinLecternBE extends BlockEntity implements LecternExten
         if (!WritableBookItem.makeSureTagIsValid(pStack.getTag()))
             return;
 
-        final var list = pStack.getOrCreateTag().getList("pages", 8)
+        final var list = pStack.getOrCreateTag().getList(WrittenBookItem.TAG_PAGES, 8)
                 .stream()
                 .map(Tag::getAsString)
                 .map(l -> {

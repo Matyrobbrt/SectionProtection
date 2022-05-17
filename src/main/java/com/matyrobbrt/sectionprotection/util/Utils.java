@@ -1,7 +1,7 @@
 package com.matyrobbrt.sectionprotection.util;
 
 import com.google.gson.JsonObject;
-import com.matyrobbrt.sectionprotection.Constants;
+import com.matyrobbrt.sectionprotection.util.function.ExceptionSupplier;
 import com.mojang.authlib.GameProfile;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -10,7 +10,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ChunkPos;
-import net.minecraft.world.level.chunk.LevelChunk;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -64,5 +63,13 @@ public class Utils {
             return ChunkPos.ZERO;
         }
         return new ChunkPos(Integer.parseInt(spl[0]), Integer.parseInt(spl[1]));
+    }
+
+    public static <T> T getOrNull(ExceptionSupplier<? extends T> sup) {
+        try {
+            return sup.get();
+        } catch (Throwable t) {
+            return null;
+        }
     }
 }

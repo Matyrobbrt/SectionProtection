@@ -4,6 +4,7 @@ import com.matyrobbrt.sectionprotection.api.Banner;
 import com.matyrobbrt.sectionprotection.api.BannerExtension;
 import com.matyrobbrt.sectionprotection.api.ClaimedChunk;
 import com.matyrobbrt.sectionprotection.api.LecternExtension;
+import com.matyrobbrt.sectionprotection.util.Constants;
 import com.matyrobbrt.sectionprotection.util.Utils;
 import com.matyrobbrt.sectionprotection.world.Banners;
 import net.minecraft.ChatFormatting;

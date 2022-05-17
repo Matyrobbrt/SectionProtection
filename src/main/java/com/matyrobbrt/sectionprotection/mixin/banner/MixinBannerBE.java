@@ -1,6 +1,6 @@
 package com.matyrobbrt.sectionprotection.mixin.banner;
 
-import com.matyrobbrt.sectionprotection.Constants;
+import com.matyrobbrt.sectionprotection.util.Constants;
 import com.matyrobbrt.sectionprotection.api.BannerExtension;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;

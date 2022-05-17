@@ -3,6 +3,7 @@ package com.matyrobbrt.sectionprotection;
 import java.util.function.Function;
 
 import com.matyrobbrt.sectionprotection.api.ClaimedChunk;
+import com.matyrobbrt.sectionprotection.util.Constants;
 import com.matyrobbrt.sectionprotection.util.Utils;
 import com.matyrobbrt.sectionprotection.world.Banners;
 

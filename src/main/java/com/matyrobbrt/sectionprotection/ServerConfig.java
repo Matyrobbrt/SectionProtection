@@ -51,8 +51,8 @@ public class ServerConfig {
         }
         builder.pop();
 
-        builder.comment("Protection rules for specific chunks")
-            .comment("Most values in this category take in a list of chunk coordinates which have the format: \"x,z\" (x and z being the positions of the chunks, that can be gotten using the command \"/sectionprotection chunk pos ~ ~ ~\")")
+        builder.comment("Protection rules for specific chunks",
+                "Most values in this category take in a list of chunk coordinates which have the format: \"x,z\" (x and z being the positions of the chunks, that can be gotten using the command \"/sectionprotection chunk pos ~ ~ ~\")")
             .push("default_protection");
         {
             DEFAULT_MOB_GRIEFING_PROTECTED = builder.comment("A list of the coordinates of chunks that are protected by mob griefing by default.",
@@ -111,7 +111,7 @@ public class ServerConfig {
         }
 
         public ChunksValueConfig defineChunks(String path, List<String> defaultValues) {
-            final var cfg = defineList(path, defaultValues, e -> e.toString().split("-").length == 2);
+            final var cfg = this.defineListAllowEmpty(List.of(path), () -> defaultValues, e -> e.toString().split(",").length == 2);
             return new ChunksValueConfig(defaultValues.stream().map(Utils::chunkPosFromString).toList(), cfg);
         }
     }
