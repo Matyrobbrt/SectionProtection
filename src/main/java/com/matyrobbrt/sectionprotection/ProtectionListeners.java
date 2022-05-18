@@ -65,7 +65,7 @@ public class ProtectionListeners {
 
     @SubscribeEvent
     static void griefing(final EntityMobGriefingEvent event) {
-        if (event.getEntity().level.isClientSide() || event.getEntity() instanceof Villager)
+        if (event.getEntity() == null || event.getEntity().level.isClientSide() || event.getEntity() instanceof Villager)
             return;
 
         final var chunk = event.getEntity().level.getChunkAt(event.getEntity().blockPosition());
