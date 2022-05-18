@@ -1,8 +1,9 @@
 package com.matyrobbrt.sectionprotection.mixin;
 
 import com.matyrobbrt.sectionprotection.ServerConfig;
-import com.matyrobbrt.sectionprotection.api.ClaimedChunk;
+import com.matyrobbrt.sectionprotection.world.ClaimedChunks;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Explosion;
 import net.minecraft.world.level.Level;
 import org.spongepowered.asm.mixin.Final;
@@ -24,13 +25,12 @@ public abstract class MixinExplosion {
         if (!this.level.isInWorldBounds(pPos)) {
             return false;
         }
-        final var chunk = this.level.getChunkAt(pPos);
-        if (ServerConfig.DEFAULT_EXPLOSION_PROTECTED.get().contains(chunk.getPos())) {
+        final var chunk = new ChunkPos(pPos);
+        if (ServerConfig.DEFAULT_EXPLOSION_PROTECTED.get().contains(chunk)) {
             return false;
         }
-        final var cap = chunk.getCapability(ClaimedChunk.CAPABILITY).resolve();
 
         // Chunk is claimed... don't explode pls
-        return cap.isEmpty() || cap.get().getOwningBanner() == null;
+        return !ClaimedChunks.get(level).isOwned(chunk);
     }
 }

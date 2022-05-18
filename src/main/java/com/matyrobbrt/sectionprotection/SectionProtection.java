@@ -1,7 +1,5 @@
 package com.matyrobbrt.sectionprotection;
 
-import com.matyrobbrt.sectionprotection.api.ClaimedChunk;
-import com.matyrobbrt.sectionprotection.api.OneCapProvider;
 import com.matyrobbrt.sectionprotection.commands.SPCommands;
 import com.matyrobbrt.sectionprotection.util.Constants;
 import com.matyrobbrt.sectionprotection.util.SPVersion;
@@ -16,10 +14,8 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.level.chunk.LevelChunk;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.common.capabilities.RegisterCapabilitiesEvent;
-import net.minecraftforge.event.AttachCapabilitiesEvent;
 import net.minecraftforge.event.entity.item.ItemTossEvent;
 import net.minecraftforge.event.server.ServerStartedEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -53,18 +49,10 @@ public class SectionProtection {
         ModLoadingContext.get().registerConfig(ModConfig.Type.SERVER, ServerConfig.SPEC, MOD_ID + "-server.toml");
 
         bus.register(ServerConfig.class);
-        bus.addListener(SectionProtection::registerCaps);
 
         MinecraftForge.EVENT_BUS.addListener(SPCommands::register);
         MinecraftForge.EVENT_BUS.register(SectionProtection.class);
         MinecraftForge.EVENT_BUS.register(ProtectionListeners.class);
-    }
-
-    private static final ResourceLocation CAP_ID = new ResourceLocation(MOD_ID, "claimed");
-
-    @SubscribeEvent
-    static void attachChunkCaps(final AttachCapabilitiesEvent<LevelChunk> event) {
-        event.addCapability(CAP_ID, new OneCapProvider<>(ClaimedChunk.CAPABILITY, ClaimedChunk.Impl::new));
     }
 
     @SubscribeEvent
@@ -82,18 +70,14 @@ public class SectionProtection {
         }
     }
 
-    static void registerCaps(final RegisterCapabilitiesEvent event) {
-        event.register(ClaimedChunk.class);
-    }
-
     @SuppressWarnings("all")
     public static boolean isConversionItem(ItemStack stack) {
         return stack.is(IS_CONVERSION_ITEM) || ServerConfig.CONVERSION_ITEMS.get()
             .stream().anyMatch(s -> stack.getItem().getRegistryName().toString().equals(s));
     }
 
-    public static boolean canClaimChunk(@Nullable Player player, LevelChunk chunk) {
-        final var canClaim = !ServerConfig.UNCLAIMABLE_CHUNKS.get().contains(chunk.getPos());
+    public static boolean canClaimChunk(@Nullable Player player, ChunkPos chunk) {
+        final var canClaim = !ServerConfig.UNCLAIMABLE_CHUNKS.get().contains(chunk);
         if (!canClaim && player != null)
             player.displayClientMessage(new TextComponent("This chunk cannot be claimed!")
                     .withStyle(ChatFormatting.RED), true);

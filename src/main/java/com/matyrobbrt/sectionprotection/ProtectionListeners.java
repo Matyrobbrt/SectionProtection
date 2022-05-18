@@ -1,12 +1,9 @@
 package com.matyrobbrt.sectionprotection;
 
-import java.util.function.Function;
-
-import com.matyrobbrt.sectionprotection.api.ClaimedChunk;
 import com.matyrobbrt.sectionprotection.util.Constants;
 import com.matyrobbrt.sectionprotection.util.Utils;
 import com.matyrobbrt.sectionprotection.world.Banners;
-
+import com.matyrobbrt.sectionprotection.world.ClaimedChunks;
 import net.minecraft.ChatFormatting;
 import net.minecraft.Util;
 import net.minecraft.core.BlockPos;
@@ -14,8 +11,9 @@ import net.minecraft.network.chat.ChatType;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.server.level.ServerPlayer;
-
+import net.minecraft.world.entity.monster.piglin.Piglin;
 import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraftforge.common.util.FakePlayer;
 import net.minecraftforge.event.entity.EntityMobGriefingEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
@@ -25,6 +23,8 @@ import net.minecraftforge.event.world.BlockEvent;
 import net.minecraftforge.eventbus.api.Event;
 import net.minecraftforge.eventbus.api.Event.Result;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+
+import java.util.function.Function;
 
 public class ProtectionListeners {
 
@@ -65,20 +65,19 @@ public class ProtectionListeners {
 
     @SubscribeEvent
     static void griefing(final EntityMobGriefingEvent event) {
-        if (event.getEntity() == null || event.getEntity().level.isClientSide() || event.getEntity() instanceof Villager)
+        if (event.getEntity() == null || event.getEntity().level.isClientSide() ||
+            event.getEntity() instanceof Villager ||
+            event.getEntity() instanceof Piglin
+        )
             return;
 
-        final var chunk = event.getEntity().level.getChunkAt(event.getEntity().blockPosition());
-        if (ServerConfig.DEFAULT_MOB_GRIEFING_PROTECTED.get().contains(chunk.getPos())) {
+        final var chunk = new ChunkPos(event.getEntity().blockPosition());
+        if (ServerConfig.DEFAULT_MOB_GRIEFING_PROTECTED.get().contains(chunk)) {
             event.setResult(Result.DENY);
             return;
         }
-        chunk.getCapability(ClaimedChunk.CAPABILITY)
-            .ifPresent(claimed -> {
-                if (claimed.getOwningBanner() != null) {
-                    event.setResult(Result.DENY);
-                }
-            });
+        if (ClaimedChunks.get(event.getEntity().level).isOwned(chunk))
+            event.setResult(Result.DENY);
     }
 
     private static void checkCanExecute(final BlockEvent event, final ServerPlayer player) {
@@ -92,22 +91,22 @@ public class ProtectionListeners {
         }
         if (!player.isCreative()) {
             final var reg = Banners.get(player.server);
-            player.level.getChunkAt(pos.apply(event)).getCapability(ClaimedChunk.CAPABILITY).ifPresent(claimed -> {
-                if (claimed.getOwningBanner() != null) {
-                    final var team = reg.getMembers(claimed.getOwningBanner());
-                    if (team != null && !team.contains(player.getUUID())) {
-                        cancelWithContainerUpdate(event, player);
-                        final MutableComponent playerName = Utils.getOwnerName(player.server, team)
-                                .map(g -> new TextComponent(g).withStyle(Constants.WITH_PLAYER_NAME))
-                                .orElse(new TextComponent("someone else").withStyle(ChatFormatting.GRAY));
-                        player.sendMessage(new TextComponent(
-                            "We're sorry, we can't let you do that! This chunk is owned by ")
-                                .withStyle(ChatFormatting.GRAY)
-                                .append(playerName),
+            final var manager = ClaimedChunks.get(player.server);
+            final var owner = manager.getOwner(pos.apply(event));
+            if (owner != null) {
+                final var team = reg.getMembers(owner);
+                if (team != null && !team.contains(player.getUUID())) {
+                    cancelWithContainerUpdate(event, player);
+                    final MutableComponent playerName = Utils.getOwnerName(player.server, team)
+                            .map(g -> new TextComponent(g).withStyle(Constants.WITH_PLAYER_NAME))
+                            .orElse(new TextComponent("someone else").withStyle(ChatFormatting.GRAY));
+                    player.sendMessage(new TextComponent(
+                                    "We're sorry, we can't let you do that! This chunk is owned by ")
+                                    .withStyle(ChatFormatting.GRAY)
+                                    .append(playerName),
                             ChatType.GAME_INFO, Util.NIL_UUID);
-                    }
                 }
-            });
+            }
         }
     }
 

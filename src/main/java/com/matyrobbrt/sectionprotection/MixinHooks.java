@@ -2,11 +2,11 @@ package com.matyrobbrt.sectionprotection;
 
 import com.matyrobbrt.sectionprotection.api.Banner;
 import com.matyrobbrt.sectionprotection.api.BannerExtension;
-import com.matyrobbrt.sectionprotection.api.ClaimedChunk;
 import com.matyrobbrt.sectionprotection.api.LecternExtension;
 import com.matyrobbrt.sectionprotection.util.Constants;
 import com.matyrobbrt.sectionprotection.util.Utils;
 import com.matyrobbrt.sectionprotection.world.Banners;
+import com.matyrobbrt.sectionprotection.world.ClaimedChunks;
 import net.minecraft.ChatFormatting;
 import net.minecraft.Util;
 import net.minecraft.core.BlockPos;
@@ -20,6 +20,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.UseOnContext;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BannerBlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -37,33 +38,35 @@ public class MixinHooks {
 
     public static void checkBlockItemIsBanner(BlockItem item, UseOnContext pContext, CallbackInfoReturnable<InteractionResult> cir) {
         if (item.getBlock() instanceof net.minecraft.world.level.block.BannerBlock bannerBlock && pContext.getItemInHand().getOrCreateTag().contains(Constants.PROTECTION_BANNER) && !pContext.getLevel().isClientSide()) {
-            final var chunk = pContext.getLevel().getChunkAt(pContext.getClickedPos());
-            if (!SectionProtection.canClaimChunk(pContext.getPlayer(), chunk)) {
+            final var pos = new ChunkPos(pContext.getClickedPos());
+            if (!SectionProtection.canClaimChunk(pContext.getPlayer(), pos)) {
                 cir.setReturnValue(InteractionResult.FAIL);
+                if (pContext.getPlayer() != null) {
+                    pContext.getPlayer().containerMenu.sendAllDataToRemote();
+                }
                 return;
             }
             final var banners = Banners.get(Objects.requireNonNull(pContext.getLevel().getServer()));
             final var pattern = new Banner(BannerBlockEntity.getItemPatterns(pContext.getItemInHand()), bannerBlock.getColor());
             final var team = banners.getMembers(pattern);
-            chunk.getCapability(ClaimedChunk.CAPABILITY)
-                    .ifPresent(cl -> {
-                        if (cl.getOwningBanner() == null)
-                            return;
-                        if (pContext.getPlayer() != null) {
-                            final MutableComponent ownerName = Utils.getOwnerName(pContext.getLevel().getServer(), team)
-                                    .map(g -> new TextComponent(g).withStyle(s -> s.withColor(0x009B00)))
-                                    .orElse(new TextComponent("someone else"));
-                            pContext.getPlayer().displayClientMessage(new TextComponent("It seems like this chunk is claimed by ")
-                                    .withStyle(ChatFormatting.RED)
-                                    .append(ownerName)
-                                    .append(" already!")
-                                    .withStyle(ChatFormatting.RED), true);
-                            if (pContext.getPlayer() instanceof ServerPlayer serverPlayer) {
-                                serverPlayer.inventoryMenu.sendAllDataToRemote();
-                            }
-                        }
-                        cir.setReturnValue(InteractionResult.FAIL);
-                    });
+            if (ClaimedChunks.get(pContext.getLevel()).isOwned(pos)) {
+                // Somebody owns it already
+                if (pContext.getPlayer() != null) {
+                    final MutableComponent ownerName = Utils.getOwnerName(pContext.getLevel().getServer(), team)
+                            .map(g -> new TextComponent(g).withStyle(s -> s.withColor(0x009B00)))
+                            .orElse(new TextComponent("someone else"));
+                    pContext.getPlayer().displayClientMessage(new TextComponent("It seems like this chunk is claimed by ")
+                            .withStyle(ChatFormatting.RED)
+                            .append(ownerName)
+                            .append(" already!")
+                            .withStyle(ChatFormatting.RED), true);
+                    if (pContext.getPlayer() instanceof ServerPlayer serverPlayer) {
+                        serverPlayer.inventoryMenu.sendAllDataToRemote();
+                    }
+                }
+                cir.setReturnValue(InteractionResult.FAIL);
+                return;
+            }
             if (pContext.getPlayer() == null || (
                     team != null && !team.contains(pContext.getPlayer().getUUID()))
             ) {
@@ -108,43 +111,42 @@ public class MixinHooks {
         public static void use(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, InteractionHand pHand, BlockHitResult pHit, CallbackInfoReturnable<InteractionResult> cir) {
             if (pLevel.isClientSide())
                 return;
-            final var chunk = pLevel.getChunkAt(pPos);
-            chunk.getCapability(ClaimedChunk.CAPABILITY).ifPresent(cap -> {
-                if (cap.getOwningBanner() == null) {
-                    pLevel.getBlockEntity(pPos, BlockEntityType.BANNER).ifPresent(banner -> {
-                        final var extensionBanner = ((BannerExtension) banner);
-                        final var stack = pPlayer.getItemInHand(pHand);
-                        final var pattern = com.matyrobbrt.sectionprotection.api.Banner.from(banner.getPatterns());
-                        if (
-                            !extensionBanner.isProtectionBanner() &&
-                            SectionProtection.isConversionItem(stack) &&
-                            SectionProtection.canClaimChunk(pPlayer, chunk)
-                        ) {
-                            final var banners = Banners.get(Objects.requireNonNull(pLevel.getServer()));
-                            final var team = banners.getMembers(pattern);
-                            if (team != null) {
-                                if (team.contains(pPlayer.getUUID())) {
-                                    cap.setOwningBanner(pattern);
-                                    extensionBanner.setProtectionBanner(true);
-                                    if (!pPlayer.isCreative()) {
-                                        stack.shrink(1);
-                                    }
-                                    cir.setReturnValue(InteractionResult.CONSUME);
-                                }
-                            } else {
-                                banners.createTeam(pattern, pPlayer.getUUID());
-                                cap.setOwningBanner(pattern);
+            final var chunk = new ChunkPos(pPos);
+            final var claimedData = ClaimedChunks.get(pLevel);
+            if (claimedData.getOwner(chunk) == null) {
+                pLevel.getBlockEntity(pPos, BlockEntityType.BANNER).ifPresent(banner -> {
+                    final var extensionBanner = ((BannerExtension) banner);
+                    final var stack = pPlayer.getItemInHand(pHand);
+                    final var pattern = com.matyrobbrt.sectionprotection.api.Banner.from(banner.getPatterns());
+                    if (
+                        !extensionBanner.isProtectionBanner() &&
+                        SectionProtection.isConversionItem(stack) &&
+                        SectionProtection.canClaimChunk(pPlayer, chunk)
+                    ) {
+                        final var banners = Banners.get(Objects.requireNonNull(pLevel.getServer()));
+                        final var team = banners.getMembers(pattern);
+                        if (team != null) {
+                            if (team.contains(pPlayer.getUUID())) {
+                                claimedData.setOwner(chunk, pattern);
                                 extensionBanner.setProtectionBanner(true);
                                 if (!pPlayer.isCreative()) {
                                     stack.shrink(1);
                                 }
-                                pPlayer.sendMessage(new TextComponent("Created new team!").withStyle(ChatFormatting.GRAY), Util.NIL_UUID);
                                 cir.setReturnValue(InteractionResult.CONSUME);
                             }
+                        } else {
+                            banners.createTeam(pattern, pPlayer.getUUID());
+                            claimedData.setOwner(chunk, pattern);
+                            extensionBanner.setProtectionBanner(true);
+                            if (!pPlayer.isCreative()) {
+                                stack.shrink(1);
+                            }
+                            pPlayer.sendMessage(new TextComponent("Created new team!").withStyle(ChatFormatting.GRAY), Util.NIL_UUID);
+                            cir.setReturnValue(InteractionResult.CONSUME);
                         }
-                    });
-                }
-            });
+                    }
+                });
+            }
         }
 
         public static List<ItemStack> getDrops(BlockState pState, LootContext.Builder pBuilder, List<ItemStack> sup) {
@@ -166,8 +168,8 @@ public class MixinHooks {
                 // Since MC first calls #onChunkUnloaded and then #setRemoved, this check keeps working.
                 !ext.getSectionProtectionIsUnloaded()
 
-                && ext.isProtectionBanner() && banner.getLevel() != null) {
-                banner.getLevel().getChunkAt(banner.getBlockPos()).getCapability(ClaimedChunk.CAPABILITY).ifPresent(claimed -> claimed.setOwningBanner(null));
+                && ext.isProtectionBanner() && banner.getLevel() != null && !banner.getLevel().isClientSide()) {
+                ClaimedChunks.get(banner.getLevel()).clearOwner(banner.getBlockPos());
             }
         }
 

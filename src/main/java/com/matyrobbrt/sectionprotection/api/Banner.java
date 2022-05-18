@@ -28,6 +28,9 @@ public record Banner(List<Data> data) {
         this(Util.make(() -> {
             final var data = ImmutableList.<Data>builder();
             data.add(new Data(base, BannerPattern.BASE));
+            if (nbt == null) {
+                return data.build();
+            }
             for (int i = 0; i < nbt.size() && i < 6; ++i) {
                 CompoundTag compoundtag1 = nbt.getCompound(i);
                 data.add(new Data(compoundtag1));

@@ -4,16 +4,15 @@
   "compatibilityLevel": "JAVA_17",
   "refmap": "sectionprotection.refmap.json",
   "mixins": [
+    "MixinBannerDuplicateRecipe",
     "MixinBlock",
     "MixinBlockBehaviour",
     "MixinBlockEntity",
     "MixinBlockItem",
     "MixinExplosion",
     "MixinFakePlayer",
-
     "banner.MixinBannerBE",
     "banner.MixinBannerBlock",
-
     "lectern.MixinLecternBE",
     "lectern.MixinLecternBlock"
   ],

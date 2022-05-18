@@ -1,11 +1,16 @@
 package com.matyrobbrt.sectionprotection.commands;
 
+import static net.minecraft.commands.Commands.argument;
+import static net.minecraft.commands.Commands.literal;
+import static net.minecraft.commands.arguments.coordinates.BlockPosArgument.ERROR_NOT_LOADED;
+import static net.minecraft.commands.arguments.coordinates.BlockPosArgument.ERROR_OUT_OF_WORLD;
 import com.matyrobbrt.sectionprotection.FakePlayerHolder;
-import com.matyrobbrt.sectionprotection.util.Constants;
 import com.matyrobbrt.sectionprotection.SectionProtection;
-import com.matyrobbrt.sectionprotection.api.ClaimedChunk;
+import com.matyrobbrt.sectionprotection.ServerConfig;
+import com.matyrobbrt.sectionprotection.util.Constants;
 import com.matyrobbrt.sectionprotection.util.Utils;
 import com.matyrobbrt.sectionprotection.world.Banners;
+import com.matyrobbrt.sectionprotection.world.ClaimedChunks;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
@@ -19,15 +24,17 @@ import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.TextComponent;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraftforge.event.RegisterCommandsEvent;
+import net.minecraftforge.registries.ForgeRegistries;
 
-import static net.minecraft.commands.Commands.*;
-import static net.minecraft.commands.arguments.coordinates.BlockPosArgument.ERROR_NOT_LOADED;
-import static net.minecraft.commands.arguments.coordinates.BlockPosArgument.ERROR_OUT_OF_WORLD;
-
+import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 public class SPCommands {
 
@@ -53,11 +60,31 @@ public class SPCommands {
                     .executes(SPCommands::guideBook))
             .then(literal("fake_players")
                     .then(literal("list")
-                            .executes(SPCommands::listFakePlayers)));
+                            .executes(SPCommands::listFakePlayers)))
+            .then(literal("conversion_items")
+                    .then(literal("list")
+                            .executes(SPCommands::listConversionItems)));
 
         event.getDispatcher().register(cmd);
     }
     //@formatter:on
+
+    private static int listConversionItems(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        MutableComponent text = new TextComponent("Items usable as conversion items: ");
+        final var all = Stream.concat(
+            Objects.requireNonNull(ForgeRegistries.ITEMS.tags()).getTag(SectionProtection.IS_CONVERSION_ITEM).stream(),
+            ServerConfig.CONVERSION_ITEMS.get().stream().map(ResourceLocation::new).map(ForgeRegistries.ITEMS::getValue).filter(Objects::nonNull)
+        );
+        for (final var it = all.iterator(); it.hasNext();) {
+            final var stack = new ItemStack(it.next());
+            text = text.append(stack.getDisplayName().copy().withStyle(s -> s.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_ITEM, new HoverEvent.ItemStackInfo(stack)))));
+            if (it.hasNext()) {
+                text = text.append(", ");
+            }
+        }
+        context.getSource().sendSuccess(text, true);
+        return Command.SINGLE_SUCCESS;
+    }
 
     private static int listFakePlayers(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         MutableComponent text = new TextComponent("FakePlayers present in this server: ");
@@ -129,8 +156,9 @@ public class SPCommands {
         } else if (!dimension.isInWorldBounds(blockpos)) {
             throw ERROR_OUT_OF_WORLD.create();
         }
-        final var chunk = dimension.getChunkAt(blockpos);
-        chunk.getCapability(ClaimedChunk.CAPABILITY).resolve().flatMap(c -> Optional.ofNullable(c.getOwningBanner()))
+        final var chunk = new ChunkPos(blockpos);
+        final var manager = ClaimedChunks.get(dimension);
+        Optional.ofNullable(manager.getOwner(chunk))
             .map(ban -> Banners.get(context.getSource().getServer()).getMembers(ban))
             .ifPresentOrElse(team -> {
                 final var members = team.stream()

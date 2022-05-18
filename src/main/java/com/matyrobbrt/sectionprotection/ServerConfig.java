@@ -11,6 +11,8 @@ import net.minecraftforge.fml.event.config.ModConfigEvent;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @SuppressWarnings("deprecation")
 public class ServerConfig {
@@ -52,6 +54,7 @@ public class ServerConfig {
         }
         builder.pop();
 
+        // TODO document ranged values, like "s10:0,0"
         builder.comment("Protection rules for specific chunks",
                 "Most values in this category take in a list of chunk coordinates which have the format: \"x,z\" (x and z being the positions of the chunks, that can be gotten using the command \"/sectionprotection chunk pos ~ ~ ~\")")
             .push("default_protection");
@@ -84,19 +87,19 @@ public class ServerConfig {
         ChunksValueConfig.ALL.forEach(ChunksValueConfig::reload);
     }
 
-    public static final class ChunksValueConfig extends Value<List<ChunkPos>> {
+    public static final class ChunksValueConfig extends Value<Set<ChunkPos>> {
         private static final List<ChunksValueConfig> ALL = new ArrayList<>();
 
         private final ForgeConfigSpec.ConfigValue<List<? extends String>> cfg;
 
-        private ChunksValueConfig(List<ChunkPos> defaultValue, ForgeConfigSpec.ConfigValue<List<? extends String>> cfg) {
+        private ChunksValueConfig(Set<ChunkPos> defaultValue, ForgeConfigSpec.ConfigValue<List<? extends String>> cfg) {
             super(defaultValue);
             this.cfg = cfg;
             ALL.add(this);
         }
 
         private void reload() {
-            accept(cfg.get().stream().map(Utils::chunkPosFromString).toList());
+            accept(cfg.get().stream().flatMap(s -> Utils.chunkPosFromString(s).stream()).collect(Collectors.toSet()));
         }
     }
 
@@ -112,8 +115,8 @@ public class ServerConfig {
         }
 
         public ChunksValueConfig defineChunks(String path, List<String> defaultValues) {
-            final var cfg = this.defineListAllowEmpty(List.of(path), () -> defaultValues, e -> e.toString().split(",").length == 2);
-            return new ChunksValueConfig(defaultValues.stream().map(Utils::chunkPosFromString).toList(), cfg);
+            final var cfg = this.defineListAllowEmpty(List.of(path), () -> defaultValues, e -> true);
+            return new ChunksValueConfig(defaultValues.stream().flatMap(str -> Utils.chunkPosFromString(str).stream()).collect(Collectors.toSet()), cfg);
         }
     }
 }

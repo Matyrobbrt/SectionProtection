@@ -15,8 +15,11 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.InputStreamReader;
 import java.net.URL;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 public class Utils {
@@ -57,12 +60,32 @@ public class Utils {
         stack.getOrCreateTag().put("display", displayTag);
     }
 
-    public static ChunkPos chunkPosFromString(String str) {
+    // TODO better validation
+    public static Collection<ChunkPos> chunkPosFromString(String str) {
+        if (str.startsWith("s")) {
+            final var posIndex = str.indexOf(':');
+            final var area = Integer.parseInt(str.substring(1, posIndex)) / 2;
+            final var tgtStr = str.substring(posIndex + 1);
+            final var spl = tgtStr.split(",");
+            final var startPos = new ChunkPos(Integer.parseInt(spl[0]), Integer.parseInt(spl[1]));
+
+            final Set<ChunkPos> pos = new HashSet<>();
+            pos.add(startPos);
+            for (int x = -area; x <= area; x++) {
+                for (int z = -area; z <= area; z++) {
+                    final var relativeX = startPos.x + x;
+                    final var relativeZ = startPos.z + z;
+                    pos.add(new ChunkPos(relativeX, relativeZ));
+                    pos.add(new ChunkPos(relativeZ, relativeX));
+                }
+            }
+            return pos;
+        }
         final var spl = str.split(",");
         if (spl.length != 2) {
-            return ChunkPos.ZERO;
+            return List.of(ChunkPos.ZERO);
         }
-        return new ChunkPos(Integer.parseInt(spl[0]), Integer.parseInt(spl[1]));
+        return List.of(new ChunkPos(Integer.parseInt(spl[0]), Integer.parseInt(spl[1])));
     }
 
     public static <T> T getOrNull(ExceptionSupplier<? extends T> sup) {

@@ -25,6 +25,7 @@ public class Constants {
     public static final UnaryOperator<Style> WITH_PLAYER_NAME = s -> s.withColor(PLAYER_NAME_COLOUR);
 
     // TODO try making the book better
+    // TODO information about fake players
     public static final ItemStack SP_BOOK = BookBuilder.builder()
         .author("Matyrobbrt")
         .title("SectionProtection Guide")

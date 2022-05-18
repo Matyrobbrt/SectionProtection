@@ -5,10 +5,10 @@ import com.google.gson.JsonObject;
 import com.matyrobbrt.sectionprotection.FakePlayerHolder;
 import com.matyrobbrt.sectionprotection.util.Constants;
 import com.matyrobbrt.sectionprotection.SectionProtection;
-import com.matyrobbrt.sectionprotection.api.ClaimedChunk;
 import com.matyrobbrt.sectionprotection.api.LecternExtension;
 import com.matyrobbrt.sectionprotection.util.Utils;
 import com.matyrobbrt.sectionprotection.world.Banners;
+import com.matyrobbrt.sectionprotection.world.ClaimedChunks;
 import com.mojang.authlib.GameProfile;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -20,12 +20,12 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.WritableBookItem;
 import net.minecraft.world.item.WrittenBookItem;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.entity.LecternBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.common.util.FakePlayer;
-import net.minecraftforge.common.util.FakePlayerFactory;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -93,8 +93,9 @@ public abstract class MixinLecternBE extends BlockEntity implements LecternExten
         if (pPlayer == null || level == null || level.isClientSide() || !isProtectionLectern || pStack.isEmpty())
             return;
 
-        final var cap = level.getChunkAt(worldPosition).getCapability(ClaimedChunk.CAPABILITY).orElse(null);
-        if (cap == null || cap.getOwningBanner() == null) {
+        final var manager = ClaimedChunks.get(level);
+        final var chunk = new ChunkPos(this.worldPosition);
+        if (!manager.isOwned(chunk)) {
             return;
         }
 
@@ -153,12 +154,12 @@ public abstract class MixinLecternBE extends BlockEntity implements LecternExten
         }
 
         final var banners = Banners.get(level.getServer());
-        final var team = banners.getMembers(cap.getOwningBanner());
+        final var team = banners.getMembers(manager.getOwner(chunk));
         if (!players.isEmpty()) { // If empty, they want a list of members already in the team
             if (team == null) {
-                banners.createTeam(cap.getOwningBanner(), pPlayer.getUUID());
+                banners.createTeam(manager.getOwner(chunk), pPlayer.getUUID());
                 players.remove(pPlayer.getUUID());
-                banners.getMembers(cap.getOwningBanner()).addAll(players);
+                banners.getMembers(manager.getOwner(chunk)).addAll(players);
             } else {
                 if (!team.contains(pPlayer.getUUID())) {
                     return; // Don't do stuff on behlaf of another team
@@ -181,7 +182,7 @@ public abstract class MixinLecternBE extends BlockEntity implements LecternExten
         }
 
         // Now recreate the book
-        final var newTeam = banners.getMembers(cap.getOwningBanner());
+        final var newTeam = banners.getMembers(manager.getOwner(chunk));
         final var newBook = new ItemStack(pStack.getItem());
         final var newList = new ListTag();
         Lists.partition(newTeam, 6).forEach(sub -> {

@@ -4,8 +4,8 @@ import com.matyrobbrt.sectionprotection.util.Constants;
 import com.matyrobbrt.sectionprotection.SectionProtection;
 import com.matyrobbrt.sectionprotection.api.Banner;
 import com.matyrobbrt.sectionprotection.api.BannerExtension;
-import com.matyrobbrt.sectionprotection.api.ClaimedChunk;
 import com.matyrobbrt.sectionprotection.world.Banners;
+import com.matyrobbrt.sectionprotection.world.ClaimedChunks;
 import net.minecraft.ChatFormatting;
 import net.minecraft.Util;
 import net.minecraft.core.BlockPos;
@@ -14,6 +14,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Explosion;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.AbstractBannerBlock;
@@ -47,22 +48,21 @@ public abstract class MixinBannerBlock extends Block {
                 if (isProtection) {
                     ((BannerExtension) banner).setProtectionBanner(true);
                     if (pPlacer instanceof Player player) {
-                        final var chunk = pLevel.getChunkAt(pPos);
+                        final var chunk = new ChunkPos(pPos);
                         if (!SectionProtection.canClaimChunk(player, chunk)) return;
-                        chunk.getCapability(ClaimedChunk.CAPABILITY).ifPresent(cap -> {
-                            final var banners = Banners.get(Objects.requireNonNull(pLevel.getServer()));
-                            final var pattern = Banner.from(banner.getPatterns());
-                            final var team = banners.getMembers(pattern);
-                            if (team != null) {
-                                if (team.contains(player.getUUID())) {
-                                    cap.setOwningBanner(pattern);
-                                }
-                            } else {
-                                banners.createTeam(pattern, player.getUUID());
-                                cap.setOwningBanner(pattern);
-                                player.sendMessage(new TextComponent("Created new team!").withStyle(ChatFormatting.GRAY), Util.NIL_UUID);
+                        final var manager = ClaimedChunks.get(pLevel);
+                        final var banners = Banners.get(Objects.requireNonNull(pLevel.getServer()));
+                        final var pattern = Banner.from(banner.getPatterns());
+                        final var team = banners.getMembers(pattern);
+                        if (team != null) {
+                            if (team.contains(player.getUUID())) {
+                                manager.setOwner(chunk, pattern);
                             }
-                        });
+                        } else {
+                            banners.createTeam(pattern, player.getUUID());
+                            manager.setOwner(chunk, pattern);
+                            player.sendMessage(new TextComponent("Created new team!").withStyle(ChatFormatting.GRAY), Util.NIL_UUID);
+                        }
                     }
                 }
             });
