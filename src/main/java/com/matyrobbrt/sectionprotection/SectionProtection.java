@@ -93,7 +93,7 @@ public class SectionProtection {
     }
 
     public static boolean canClaimChunk(@Nullable Player player, LevelChunk chunk) {
-        final var canClaim = ServerConfig.UNCLAIMABLE_CHUNKS.get().contains(chunk.getPos());
+        final var canClaim = !ServerConfig.UNCLAIMABLE_CHUNKS.get().contains(chunk.getPos());
         if (!canClaim && player != null)
             player.displayClientMessage(new TextComponent("This chunk cannot be claimed!")
                     .withStyle(ChatFormatting.RED), true);
