@@ -1,0 +1,11 @@
+{
+  "replace": false,
+  "values": [
+    // Waystones
+    { "id": "#waystones:sharestone", "required": false },
+
+    { "id": "waystones:waystone", "required": false },
+    { "id": "waystones:mossy_waystone", "required": false },
+    { "id": "waystones:sandy_sharestone", "required": false }
+  ]
+}

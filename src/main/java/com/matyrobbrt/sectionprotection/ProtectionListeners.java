@@ -62,13 +62,6 @@ public class ProtectionListeners {
     }
 
     @SubscribeEvent
-    static void interact(final PlayerInteractEvent.RightClickItem event) {
-        if (event.getPlayer() instanceof ServerPlayer player) {
-            checkCanExecute(event, RightClickItem::getPos, player, SPTags.ALLOW_INTERACTION);
-        }
-    }
-
-    @SubscribeEvent
     static void griefing(final EntityMobGriefingEvent event) {
         if (event.getEntity() == null || event.getEntity().level.isClientSide() ||
             event.getEntity() instanceof Villager ||
