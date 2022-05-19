@@ -6,12 +6,8 @@ import com.matyrobbrt.sectionprotection.util.SPVersion;
 import com.matyrobbrt.sectionprotection.util.Utils;
 import com.mojang.logging.LogUtils;
 import net.minecraft.ChatFormatting;
-import net.minecraft.core.Registry;
 import net.minecraft.network.chat.TextComponent;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.ChunkPos;
@@ -38,8 +34,6 @@ public class SectionProtection {
     public static final SPVersion VERSION;
     public static final String MOD_ID = "sectionprotection";
     public static final Logger LOGGER = LogUtils.getLogger();
-
-    public static final TagKey<Item> IS_CONVERSION_ITEM = TagKey.create(Registry.ITEM_REGISTRY, new ResourceLocation(MOD_ID, "conversion_item"));
 
     public SectionProtection() {
         final var bus = FMLJavaModLoadingContext.get().getModEventBus();
@@ -72,7 +66,7 @@ public class SectionProtection {
 
     @SuppressWarnings("all")
     public static boolean isConversionItem(ItemStack stack) {
-        return stack.is(IS_CONVERSION_ITEM) || ServerConfig.CONVERSION_ITEMS.get()
+        return stack.is(SPTags.IS_CONVERSION_ITEM) || ServerConfig.CONVERSION_ITEMS.get()
             .stream().anyMatch(s -> stack.getItem().getRegistryName().toString().equals(s));
     }
 

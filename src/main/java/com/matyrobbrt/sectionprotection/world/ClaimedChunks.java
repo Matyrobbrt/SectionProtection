@@ -47,7 +47,7 @@ public class ClaimedChunks extends SavedData {
     }
 
     public boolean isOwned(BlockPos pos) {
-        return chunks.containsKey(new ChunkPos(pos));
+        return isOwned(new ChunkPos(pos));
     }
 
     public void setOwner(ChunkPos pos, Banner newOwner) {

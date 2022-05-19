@@ -5,6 +5,7 @@ import static net.minecraft.commands.Commands.literal;
 import static net.minecraft.commands.arguments.coordinates.BlockPosArgument.ERROR_NOT_LOADED;
 import static net.minecraft.commands.arguments.coordinates.BlockPosArgument.ERROR_OUT_OF_WORLD;
 import com.matyrobbrt.sectionprotection.FakePlayerHolder;
+import com.matyrobbrt.sectionprotection.SPTags;
 import com.matyrobbrt.sectionprotection.SectionProtection;
 import com.matyrobbrt.sectionprotection.ServerConfig;
 import com.matyrobbrt.sectionprotection.util.Constants;
@@ -72,7 +73,7 @@ public class SPCommands {
     private static int listConversionItems(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         MutableComponent text = new TextComponent("Items usable as conversion items: ");
         final var all = Stream.concat(
-            Objects.requireNonNull(ForgeRegistries.ITEMS.tags()).getTag(SectionProtection.IS_CONVERSION_ITEM).stream(),
+            Objects.requireNonNull(ForgeRegistries.ITEMS.tags()).getTag(SPTags.IS_CONVERSION_ITEM).stream(),
             ServerConfig.CONVERSION_ITEMS.get().stream().map(ResourceLocation::new).map(ForgeRegistries.ITEMS::getValue).filter(Objects::nonNull)
         );
         for (final var it = all.iterator(); it.hasNext();) {
