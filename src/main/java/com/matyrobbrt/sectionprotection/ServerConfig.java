@@ -23,6 +23,7 @@ public class ServerConfig {
     // General
     public static final ForgeConfigSpec.BooleanValue ALWAYS_ALLOW_FAKE_PLAYERS;
     public static final ForgeConfigSpec.ConfigValue<List<? extends String>> CONVERSION_ITEMS;
+    public static final ForgeConfigSpec.BooleanValue CONSUME_CONVERSION_ITEM;
 
     // Claiming
     public static final ChunksValueConfig UNCLAIMABLE_CHUNKS;
@@ -44,6 +45,9 @@ public class ServerConfig {
             CONVERSION_ITEMS = builder.comment("A list of items that can be used for converting banners and lecterns into protecting ones.",
                     "Note: While this config exists, items in the tag \"sectionprotection:conversion_item\" will be accepted as well.")
                     .defineList("conversion_items", List.of(Registry.ITEM.getKey(Items.NETHERITE_INGOT).toString()), e -> true);
+
+            CONSUME_CONVERSION_ITEM = builder.comment("If conversion items should be consumed when they convert a banner / lectern.")
+                    .define("consume_conversion_item", true);
         }
         builder.pop();
 

@@ -2,6 +2,7 @@ package com.matyrobbrt.sectionprotection.mixin.lectern;
 
 import static net.minecraft.world.level.block.LecternBlock.resetBookState;
 import com.matyrobbrt.sectionprotection.SectionProtection;
+import com.matyrobbrt.sectionprotection.ServerConfig;
 import com.matyrobbrt.sectionprotection.api.LecternExtension;
 import net.minecraft.core.BlockPos;
 import net.minecraft.sounds.SoundEvents;
@@ -45,7 +46,7 @@ public abstract class MixinLecternBlock extends Block {
             final var extensionLectern = ((LecternExtension) lectern);
             final var stack = pPlayer.getItemInHand(pHand);
             if (!extensionLectern.isProtectionLectern() && SectionProtection.isConversionItem(stack)) {
-                if (!pPlayer.isCreative()) {
+                if (!pPlayer.isCreative() && ServerConfig.CONSUME_CONVERSION_ITEM.get()) {
                     stack.shrink(1);
                 }
                 extensionLectern.setProtectionLectern(true);

@@ -38,7 +38,7 @@ import java.util.Objects;
 public class MixinHooks {
 
     public static void checkBlockItemIsBanner(BlockItem item, UseOnContext pContext, CallbackInfoReturnable<InteractionResult> cir) {
-        if (item.getBlock() instanceof net.minecraft.world.level.block.BannerBlock bannerBlock && pContext.getItemInHand().getOrCreateTag().contains(Constants.PROTECTION_BANNER) && !pContext.getLevel().isClientSide()) {
+        if (item.getBlock() instanceof net.minecraft.world.level.block.BannerBlock bannerBlock && pContext.getItemInHand().getOrCreateTag().getBoolean(Constants.PROTECTION_BANNER) && !pContext.getLevel().isClientSide()) {
             final var pos = new ChunkPos(pContext.getClickedPos());
             if (!SectionProtection.canClaimChunk(pContext.getPlayer(), pos)) {
                 cir.setReturnValue(InteractionResult.FAIL);
@@ -89,7 +89,8 @@ public class MixinHooks {
             if (be instanceof LecternExtension ext && !sup.isEmpty()) {
                 final var stack = sup.get(0);
                 stack.getOrCreateTag().putBoolean(Constants.PROTECTION_LECTERN, ext.isProtectionLectern());
-                Utils.setLore(stack, new TextComponent("Protection Lectern").withStyle(ChatFormatting.AQUA));
+				if (ext.isProtectionLectern())
+					Utils.setLore(stack, new TextComponent("Protection Lectern").withStyle(ChatFormatting.AQUA));
             }
             return sup;
         }
@@ -128,7 +129,7 @@ public class MixinHooks {
                         if (team.contains(pPlayer.getUUID())) {
                             toClaim.forEach(c -> claimedData.setOwner(c, pattern));
                             extensionBanner.setProtectionBanner(true);
-                            if (!pPlayer.isCreative()) {
+                            if (!pPlayer.isCreative() && ServerConfig.CONSUME_CONVERSION_ITEM.get()) {
                                 stack.shrink(1);
                             }
                             cir.setReturnValue(InteractionResult.CONSUME);
@@ -137,7 +138,7 @@ public class MixinHooks {
                         banners.createTeam(pattern, pPlayer.getUUID());
                         toClaim.forEach(c -> claimedData.setOwner(c, pattern));
                         extensionBanner.setProtectionBanner(true);
-                        if (!pPlayer.isCreative()) {
+                        if (!pPlayer.isCreative() && ServerConfig.CONSUME_CONVERSION_ITEM.get()) {
                             stack.shrink(1);
                         }
                         pPlayer.sendMessage(new TextComponent("Created new team!").withStyle(ChatFormatting.GRAY), Util.NIL_UUID);
@@ -152,7 +153,8 @@ public class MixinHooks {
             if (be instanceof BannerExtension ext && !sup.isEmpty()) {
                 final var stack = sup.get(0);
                 stack.getOrCreateTag().putBoolean(Constants.PROTECTION_BANNER, ext.isProtectionBanner());
-                Utils.setLore(stack, new TextComponent("Protection Banner").withStyle(ChatFormatting.AQUA));
+				if (ext.isProtectionBanner())
+					Utils.setLore(stack, new TextComponent("Protection Banner").withStyle(ChatFormatting.AQUA));
             }
             return sup;
         }

@@ -14,7 +14,7 @@ public abstract class MixinBannerDuplicateRecipe {
     private void sectionprotection$redirectAssemble(ItemStack stack, int oldCount) {
         stack.setCount(1);
         if (stack.getOrCreateTag().contains(Constants.PROTECTION_BANNER)) {
-            stack.getOrCreateTag().remove(Constants.PROTECTION_BANNER); // Prevent duplicates
+            stack.getOrCreateTag().remove(Constants.PROTECTION_BANNER); // Prevent duplication of protection banners
         }
     }
 
