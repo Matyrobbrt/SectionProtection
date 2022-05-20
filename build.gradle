@@ -94,6 +94,7 @@ processResources {
     filesMatching('META-INF/mods.toml') {
         expand expands
     }
+    exclude ".cache/cache"
 }
 
 final var actualDateTime = OffsetDateTime.now(ZoneOffset.UTC).withNano(0)

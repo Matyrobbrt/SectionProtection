@@ -7,6 +7,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.saveddata.SavedData;
@@ -87,12 +88,12 @@ public class ClaimedChunks extends SavedData {
         return chunks;
     }
 
-    public static ClaimedChunks get(@Nonnull Level level) {
-        return get(Objects.requireNonNull(level.getServer()));
+    public static ClaimedChunks get(Level level) {
+        return get((ServerLevel) level);
     }
 
-    public static ClaimedChunks get(MinecraftServer server) {
-        return Objects.requireNonNull(server.getLevel(Level.OVERWORLD)).getDataStorage().computeIfAbsent(ClaimedChunks::load, ClaimedChunks::new,
+    public static ClaimedChunks get(ServerLevel level) {
+        return level.getDataStorage().computeIfAbsent(ClaimedChunks::load, ClaimedChunks::new,
                 SectionProtection.MOD_ID + "_claimed_chunks");
     }
 

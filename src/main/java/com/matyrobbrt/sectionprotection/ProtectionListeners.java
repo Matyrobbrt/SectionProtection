@@ -99,7 +99,7 @@ public class ProtectionListeners {
         if (!player.isCreative()) {
             final var posValue = pos.apply(event);
             final var reg = Banners.get(player.server);
-            final var manager = ClaimedChunks.get(player.server);
+            final var manager = ClaimedChunks.get(player.level);
             final var owner = manager.getOwner(posValue);
             if (owner != null) {
                 final var team = reg.getMembers(owner);
