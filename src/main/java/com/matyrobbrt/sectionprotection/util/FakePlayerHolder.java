@@ -1,4 +1,4 @@
-package com.matyrobbrt.sectionprotection;
+package com.matyrobbrt.sectionprotection.util;
 
 import com.mojang.authlib.GameProfile;
 import net.minecraftforge.common.util.FakePlayer;
@@ -11,7 +11,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
-import java.util.function.Consumer;
 
 public class FakePlayerHolder {
 

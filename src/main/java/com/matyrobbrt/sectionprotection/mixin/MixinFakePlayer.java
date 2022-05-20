@@ -1,6 +1,6 @@
 package com.matyrobbrt.sectionprotection.mixin;
 
-import com.matyrobbrt.sectionprotection.FakePlayerHolder;
+import com.matyrobbrt.sectionprotection.util.FakePlayerHolder;
 import com.mojang.authlib.GameProfile;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;

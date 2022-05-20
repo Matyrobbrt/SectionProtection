@@ -2,7 +2,7 @@ package com.matyrobbrt.sectionprotection.mixin.lectern;
 
 import com.google.common.collect.Lists;
 import com.google.gson.JsonObject;
-import com.matyrobbrt.sectionprotection.FakePlayerHolder;
+import com.matyrobbrt.sectionprotection.util.FakePlayerHolder;
 import com.matyrobbrt.sectionprotection.util.Constants;
 import com.matyrobbrt.sectionprotection.SectionProtection;
 import com.matyrobbrt.sectionprotection.api.LecternExtension;

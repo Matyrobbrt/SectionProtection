@@ -4,7 +4,7 @@ import static net.minecraft.commands.Commands.argument;
 import static net.minecraft.commands.Commands.literal;
 import static net.minecraft.commands.arguments.coordinates.BlockPosArgument.ERROR_NOT_LOADED;
 import static net.minecraft.commands.arguments.coordinates.BlockPosArgument.ERROR_OUT_OF_WORLD;
-import com.matyrobbrt.sectionprotection.FakePlayerHolder;
+import com.matyrobbrt.sectionprotection.util.FakePlayerHolder;
 import com.matyrobbrt.sectionprotection.SPTags;
 import com.matyrobbrt.sectionprotection.SectionProtection;
 import com.matyrobbrt.sectionprotection.ServerConfig;
@@ -109,7 +109,7 @@ public class SPCommands {
 
     private static int guideBook(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         if (context.getSource().getEntity() instanceof Player player) {
-            if (player.getInventory().add(Constants.SP_BOOK.copy())) {
+            if (player.getInventory().add(Constants.SP_BOOK.get())) {
                 context.getSource().sendSuccess(new TextComponent("You have been given a SectionProtection guide book!"), true);
             }
         }

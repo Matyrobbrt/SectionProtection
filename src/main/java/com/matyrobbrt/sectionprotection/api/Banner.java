@@ -16,7 +16,7 @@ public record Banner(List<Data> data) {
     public Banner(ListTag nbt) {
         this(Util.make(() -> {
             final var data = ImmutableList.<Data>builder();
-            for (int i = 0; i < nbt.size() && i < 6; ++i) {
+            for (int i = 0; i < nbt.size(); ++i) {
                 CompoundTag compoundtag1 = nbt.getCompound(i);
                 data.add(new Data(compoundtag1));
             }
@@ -31,7 +31,7 @@ public record Banner(List<Data> data) {
             if (nbt == null) {
                 return data.build();
             }
-            for (int i = 0; i < nbt.size() && i < 6; ++i) {
+            for (int i = 0; i < nbt.size(); ++i) {
                 CompoundTag compoundtag1 = nbt.getCompound(i);
                 data.add(new Data(compoundtag1));
             }

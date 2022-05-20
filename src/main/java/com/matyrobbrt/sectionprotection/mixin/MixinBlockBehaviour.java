@@ -7,6 +7,7 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.AbstractBannerBlock;
 import net.minecraft.world.level.block.BannerBlock;
 import net.minecraft.world.level.block.LecternBlock;
 import net.minecraft.world.level.block.state.BlockBehaviour;
@@ -30,7 +31,7 @@ public abstract class MixinBlockBehaviour {
     )
     @SuppressWarnings("ALL")
     private void sectionprotection$use(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, InteractionHand pHand, BlockHitResult pHit, CallbackInfoReturnable<InteractionResult> cir) {
-        if (((Object) this) instanceof BannerBlock bannerBlock) {
+        if (((Object) this) instanceof AbstractBannerBlock bannerBlock) {
             MixinHooks.BannerStuff.use(pState, pLevel, pPos, pPlayer, pHand, pHit, cir);
         }
     }
@@ -44,7 +45,7 @@ public abstract class MixinBlockBehaviour {
     private void sectionprotection$getDrops(BlockState pState, LootContext.Builder pBuilder, CallbackInfoReturnable<List<ItemStack>> cir) {
         if (((Object) this) instanceof LecternBlock) {
             cir.setReturnValue(MixinHooks.Lectern.getDrops(pState, pBuilder, cir.getReturnValue()));
-        } else if (((Object) this) instanceof BannerBlock) {
+        } else if (((Object) this) instanceof AbstractBannerBlock) {
             cir.setReturnValue(MixinHooks.BannerStuff.getDrops(pState, pBuilder, cir.getReturnValue()));
         }
     }

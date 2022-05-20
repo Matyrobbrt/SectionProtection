@@ -50,14 +50,18 @@ public class Utils {
         return Optional.empty();
     }
 
-    public static void setLore(ItemStack stack, Component... components) {
+    public static void setLore(CompoundTag tag, Component... components) {
         final var displayTag = new CompoundTag();
         final var lore = new ListTag();
         for (final var comp : components) {
             lore.add(StringTag.valueOf(Component.Serializer.toJson(comp)));
         }
         displayTag.put("Lore", lore);
-        stack.getOrCreateTag().put("display", displayTag);
+        tag.put("display", displayTag);
+    }
+
+    public static void setLore(ItemStack stack, Component... components) {
+        setLore(stack.getOrCreateTag(), components);
     }
 
     // TODO better validation

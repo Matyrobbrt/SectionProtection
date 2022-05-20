@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "group": "sp_banners",
+  "pattern": [
+    "CCC",
+    "CCC",
+    " S "
+  ],
+  "key": {
+    "C": {
+      "item": "minecraft:orange_carpet"
+    },
+    "S": {
+      "tag": "forge:rods/wooden"
+    }
+  },
+  "result": {
+    "item": "minecraft:orange_banner",
+    "count": 2
+  }
+}

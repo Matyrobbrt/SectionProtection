@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @SuppressWarnings("deprecation")
 public class ServerConfig {
@@ -25,6 +26,7 @@ public class ServerConfig {
 
     // Claiming
     public static final ChunksValueConfig UNCLAIMABLE_CHUNKS;
+    public static final ForgeConfigSpec.IntValue CLAIM_RADIUS;
 
     // Default Protection
     public static final ChunksValueConfig DEFAULT_MOB_GRIEFING_PROTECTED;
@@ -51,6 +53,10 @@ public class ServerConfig {
             UNCLAIMABLE_CHUNKS = builder.comment("A list of the coordinates of chunks that shouldn't be claimable.",
                     "The format for a chunk coordinate is: \"x,z\", where x and z are the positions of the chunk. (Can be gotten though the command \"/sectionprotection chunk pos ~ ~ ~\")")
                     .defineChunks("unclaimable_chunks", defaultUnclaimable);
+
+            CLAIM_RADIUS = builder.comment("The radius of the area that a banner claims chunks around.",
+                            "0 creates a 1x1 area, 1 creates a 3x3 area, etc.")
+                    .defineInRange("claim_radius", 0, 0, Byte.MAX_VALUE);
         }
         builder.pop();
 
@@ -69,6 +75,10 @@ public class ServerConfig {
         builder.pop();
 
         SPEC = builder.build();
+    }
+
+    public static Stream<ChunkPos> getChunksToClaim(ChunkPos centre) {
+        return ChunkPos.rangeClosed(centre, CLAIM_RADIUS.get());
     }
 
     @SubscribeEvent

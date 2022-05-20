@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "group": "sp_banners",
+  "pattern": [
+    "CCC",
+    "CCC",
+    "DSD"
+  ],
+  "key": {
+    "C": {
+      "tag": "minecraft:carpets"
+    },
+    "S": {
+      "tag": "forge:rods/wooden"
+    },
+    "D": {
+      "tag": "forge:dyes/purple"
+    }
+  },
+  "result": {
+    "item": "minecraft:purple_banner",
+    "count": 2
+  }
+}
