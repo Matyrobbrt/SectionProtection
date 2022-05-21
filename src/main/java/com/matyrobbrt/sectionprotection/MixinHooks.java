@@ -119,6 +119,10 @@ public class MixinHooks {
                 final var extensionBanner = ((BannerExtension) banner);
                 final var stack = pPlayer.getItemInHand(pHand);
                 final var pattern = com.matyrobbrt.sectionprotection.api.Banner.from(banner.getPatterns());
+                if (pattern.equals(Constants.OMINOUS)) {
+                    pPlayer.sendMessage(new TextComponent("Sorry, but Ominous Banners cannot be converted into Protection Banners."), Util.NIL_UUID);
+                    return;
+                }
                 if (
                     !extensionBanner.isProtectionBanner() &&
                     SectionProtection.isConversionItem(stack)
@@ -133,6 +137,7 @@ public class MixinHooks {
                                 stack.shrink(1);
                             }
                             cir.setReturnValue(InteractionResult.CONSUME);
+                            pPlayer.displayClientMessage(new TextComponent("The Banner has been converted to a Protection Banner"), true);
                         }
                     } else {
                         banners.createTeam(pattern, pPlayer.getUUID());
@@ -143,6 +148,7 @@ public class MixinHooks {
                         }
                         pPlayer.sendMessage(new TextComponent("Created new team!").withStyle(ChatFormatting.GRAY), Util.NIL_UUID);
                         cir.setReturnValue(InteractionResult.CONSUME);
+                        pPlayer.displayClientMessage(new TextComponent("The Banner has been converted to a Protection Banner"), true);
                     }
                 }
             });

@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.matyrobbrt.sectionprotection.SectionProtection;
 import com.matyrobbrt.sectionprotection.ServerConfig;
+import com.matyrobbrt.sectionprotection.api.Banner;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
@@ -68,6 +69,17 @@ public class Constants {
             Utils.setLore(c, new TextComponent("This book contains useful information on how to claim chunks."));
         })
         .build(new ItemStack(Items.WRITTEN_BOOK));
+
+    public static final Banner OMINOUS = new Banner.Builder()
+        .add("mr", 9)
+        .add("bs", 8)
+        .add("cs", 7)
+        .add("bo", 8)
+        .add("ms", 15)
+        .add("hh", 8)
+        .add("mc", 8)
+        .add("bo", 15)
+        .build();
 
     private static TextComponent t(String str) {
         return new TextComponent(str);

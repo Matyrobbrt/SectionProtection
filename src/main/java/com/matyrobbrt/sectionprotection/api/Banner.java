@@ -1,9 +1,12 @@
 package com.matyrobbrt.sectionprotection.api;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import com.google.common.collect.ImmutableList;
 
+import com.google.common.collect.Iterables;
 import com.mojang.datafixers.util.Pair;
 import net.minecraft.Util;
 import net.minecraft.nbt.CompoundTag;
@@ -51,6 +54,19 @@ public record Banner(List<Data> data) {
         return tag;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Banner banner = (Banner) o;
+        return Iterables.elementsEqual(data, banner.data);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(data);
+    }
+
     public record Data(DyeColor color, BannerPattern pattern) {
 
         public Data(int color, String pattern) {
@@ -66,6 +82,23 @@ public record Banner(List<Data> data) {
             tag.putInt("Color", color.getId());
             tag.putString("Pattern", pattern.getHashname());
             return tag;
+        }
+    }
+
+    public static class Builder {
+        private final List<Data> data = new ArrayList<>();
+
+        public Builder add(BannerPattern pattern, DyeColor colour) {
+            this.data.add(new Data(colour, pattern));
+            return this;
+        }
+
+        public Builder add(String pattern, int colour) {
+            return add(BannerPattern.byHash(pattern), DyeColor.byId(colour));
+        }
+
+        public Banner build() {
+            return new Banner(List.copyOf(data));
         }
     }
 }
