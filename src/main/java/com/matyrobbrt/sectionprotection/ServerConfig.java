@@ -1,5 +1,6 @@
 package com.matyrobbrt.sectionprotection;
 
+import com.matyrobbrt.sectionprotection.recipe.RecipeEnabledCondition;
 import com.matyrobbrt.sectionprotection.util.Utils;
 import com.matyrobbrt.sectionprotection.util.Value;
 import net.minecraft.core.Registry;
@@ -78,6 +79,14 @@ public class ServerConfig {
         }
         builder.pop();
 
+        builder.comment("SectionProtection recipes configuration.")
+            .push("recipes");
+        {
+            builder.defineRecipeEnabled("banner_recolouring");
+            builder.defineRecipeEnabled("easier_banners");
+        }
+        builder.pop();
+
         SPEC = builder.build();
     }
 
@@ -131,6 +140,13 @@ public class ServerConfig {
         public ChunksValueConfig defineChunks(String path, List<String> defaultValues) {
             final var cfg = this.defineListAllowEmpty(List.of(path), () -> defaultValues, e -> true);
             return new ChunksValueConfig(defaultValues.stream().flatMap(str -> Utils.chunkPosFromString(str).stream()).collect(Collectors.toSet()), cfg);
+        }
+
+        public ForgeConfigSpec.BooleanValue defineRecipeEnabled(String type) {
+            final var cfg = comment("If recipes of the type \"" + type + "\" should be enabled.")
+                .define(type, true);
+            RecipeEnabledCondition.TYPES.put(type, cfg::get);
+            return cfg;
         }
     }
 }

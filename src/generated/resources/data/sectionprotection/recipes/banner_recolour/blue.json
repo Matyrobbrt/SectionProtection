@@ -1,6 +1,6 @@
 {
   "type": "minecraft:crafting_shapeless",
-  "group": "banners",
+  "group": "sp_banner_recolour",
   "ingredients": [
     {
       "tag": "minecraft:banners"
@@ -11,5 +11,11 @@
   ],
   "result": {
     "item": "minecraft:blue_banner"
-  }
+  },
+  "conditions": [
+    {
+      "recipe_type": "banner_recolouring",
+      "type": "sectionprotection:enabled"
+    }
+  ]
 }

@@ -1,6 +1,6 @@
 {
   "type": "minecraft:crafting_shaped",
-  "group": "sp_banners",
+  "group": "sp_easier_banners",
   "pattern": [
     "CCC",
     "CCC",
@@ -20,5 +20,11 @@
   "result": {
     "item": "minecraft:white_banner",
     "count": 2
-  }
+  },
+  "conditions": [
+    {
+      "recipe_type": "easier_banners",
+      "type": "sectionprotection:enabled"
+    }
+  ]
 }

@@ -1,16 +1,19 @@
 package com.matyrobbrt.sectionprotection;
 
+import com.matyrobbrt.sectionprotection.recipe.ConditionalShapedRecipeBuilder;
+import com.matyrobbrt.sectionprotection.recipe.ConditionalShapelessRecipeBuilder;
+import com.matyrobbrt.sectionprotection.recipe.RecipeEnabledCondition;
 import net.minecraft.core.Registry;
 import net.minecraft.data.DataGenerator;
 import net.minecraft.data.recipes.FinishedRecipe;
 import net.minecraft.data.recipes.ShapedRecipeBuilder;
 import net.minecraft.data.recipes.ShapelessRecipeBuilder;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.level.block.BannerBlock;
 import net.minecraftforge.common.Tags;
+import net.minecraftforge.common.crafting.ConditionalRecipe;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.forge.event.lifecycle.GatherDataEvent;
@@ -38,15 +41,17 @@ public class SPDatagen {
         protected void buildCraftingRecipes(@Nonnull Consumer<FinishedRecipe> consumer) {
             for (final var dye : DyeColor.values()) {
                 final var banner = BannerBlock.byColor(dye);
-                ShapelessRecipeBuilder.shapeless(banner)
-                    .group("banners")
+                ConditionalShapelessRecipeBuilder.shapeless(banner, 1)
+                    .condition(new RecipeEnabledCondition("banner_recolouring"))
+                    .group("sp_banner_recolour")
                     .unlockedBy("has_dye", has(dye.getTag()))
                     .requires(ItemTags.BANNERS)
                     .requires(dye.getTag())
                     .save(consumer, new ResourceLocation(SectionProtection.MOD_ID, "banner_recolour/" + dye.getName()));
 
-                ShapedRecipeBuilder.shaped(banner, 2)
-                    .group("sp_banners")
+                ConditionalShapedRecipeBuilder.shaped(banner, 2)
+                    .condition(new RecipeEnabledCondition("easier_banners"))
+                    .group("sp_easier_banners")
                     .unlockedBy("has_dye", has(dye.getTag()))
                     .pattern("CCC")
                     .pattern("CCC")
@@ -55,8 +60,9 @@ public class SPDatagen {
                     .define('S', Tags.Items.RODS_WOODEN)
                     .save(consumer, new ResourceLocation(SectionProtection.MOD_ID, "easier_banners/" + dye.getName()));
 
-                ShapedRecipeBuilder.shaped(banner, 2)
-                    .group("sp_banners")
+                ConditionalShapedRecipeBuilder.shaped(banner, 2)
+                    .condition(new RecipeEnabledCondition("easier_banners"))
+                    .group("sp_easier_banners")
                     .unlockedBy("has_dye", has(dye.getTag()))
                     .pattern("CCC")
                     .pattern("CCC")

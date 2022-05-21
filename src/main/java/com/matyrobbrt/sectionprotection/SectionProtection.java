@@ -1,6 +1,7 @@
 package com.matyrobbrt.sectionprotection;
 
 import com.matyrobbrt.sectionprotection.commands.SPCommands;
+import com.matyrobbrt.sectionprotection.recipe.RecipeEnabledCondition;
 import com.matyrobbrt.sectionprotection.util.Constants;
 import com.matyrobbrt.sectionprotection.util.SPVersion;
 import com.matyrobbrt.sectionprotection.util.Utils;
@@ -10,8 +11,11 @@ import net.minecraft.network.chat.TextComponent;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.common.crafting.CraftingHelper;
+import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.event.entity.item.ItemTossEvent;
 import net.minecraftforge.event.server.ServerStartedEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -43,6 +47,7 @@ public class SectionProtection {
         ModLoadingContext.get().registerConfig(ModConfig.Type.SERVER, ServerConfig.SPEC, MOD_ID + "-server.toml");
 
         bus.register(ServerConfig.class);
+        bus.addGenericListener(RecipeSerializer.class, (final RegistryEvent.Register<RecipeSerializer<?>> event) -> CraftingHelper.register(new RecipeEnabledCondition.Serializer()));
 
         MinecraftForge.EVENT_BUS.addListener(SPCommands::register);
         MinecraftForge.EVENT_BUS.register(SectionProtection.class);
