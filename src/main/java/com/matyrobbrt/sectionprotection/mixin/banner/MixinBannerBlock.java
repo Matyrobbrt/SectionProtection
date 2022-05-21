@@ -59,11 +59,11 @@ public abstract class MixinBannerBlock extends Block {
                         final var team = banners.getMembers(pattern);
                         if (team != null) {
                             if (team.contains(player.getUUID())) {
-                                chunks.forEach(c -> manager.setOwner(c, pattern));
+                                chunks.forEach(c -> manager.setOwner(c, pattern, pPos));
                             }
                         } else {
                             banners.createTeam(pattern, player.getUUID());
-                            chunks.forEach(c -> manager.setOwner(c, pattern));
+                            chunks.forEach(c -> manager.setOwner(c, pattern, pPos));
                             player.sendMessage(new TextComponent("Created new team!").withStyle(ChatFormatting.GRAY), Util.NIL_UUID);
                         }
                     }

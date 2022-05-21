@@ -4,6 +4,7 @@ import static net.minecraft.commands.Commands.argument;
 import static net.minecraft.commands.Commands.literal;
 import static net.minecraft.commands.arguments.coordinates.BlockPosArgument.ERROR_NOT_LOADED;
 import static net.minecraft.commands.arguments.coordinates.BlockPosArgument.ERROR_OUT_OF_WORLD;
+import com.matyrobbrt.sectionprotection.api.BannerExtension;
 import com.matyrobbrt.sectionprotection.util.FakePlayerHolder;
 import com.matyrobbrt.sectionprotection.SPTags;
 import com.matyrobbrt.sectionprotection.SectionProtection;
@@ -17,6 +18,7 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.DimensionArgument;
 import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
 import net.minecraft.commands.arguments.coordinates.Coordinates;
@@ -37,6 +39,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+@SuppressWarnings("Duplicates")
 public class SPCommands {
 
     //@formatter:off
@@ -54,6 +57,16 @@ public class SPCommands {
                         .executes(ctx -> getChunkPos(new BlockPos(ctx.getSource().getPosition()), ctx))
                         .then(argument("pos", BlockPosArgument.blockPos())
                             .executes(ctx -> getChunkPos(ctx.getArgument("pos", Coordinates.class).getBlockPos(ctx.getSource()), ctx))))
+                    .then(literal("unclaim")
+                            .executes(ctx -> unclaim(ctx, new BlockPos(ctx.getSource().getPosition()), false))
+                            .then(argument("pos", BlockPosArgument.blockPos())
+                                    .executes(ctx -> unclaim(ctx, ctx.getArgument("pos", Coordinates.class).getBlockPos(ctx.getSource()), false))
+                                    .then(argument("remove_banner", new BooleanArgument())
+                                            .executes(ctx -> unclaim(ctx, ctx.getArgument("pos", Coordinates.class).getBlockPos(ctx.getSource()), ctx.getArgument("remove_banner", Boolean.class))))))
+                    .then(literal("banner_pos")
+                            .executes(ctx -> bannerPos(ctx, new BlockPos(ctx.getSource().getPosition())))
+                            .then(argument("pos", BlockPosArgument.blockPos())
+                                    .executes(context -> bannerPos(context, context.getArgument("pos", Coordinates.class).getBlockPos(context.getSource())))))
             )
             .then(literal("version")
                     .executes(SPCommands::version))
@@ -70,6 +83,62 @@ public class SPCommands {
     }
     //@formatter:on
 
+    private static int bannerPos(CommandContext<CommandSourceStack> context, BlockPos pos) throws CommandSyntaxException {
+        final var manager = ClaimedChunks.get(context.getSource().getLevel());
+        final var chunkData = manager.getOwner(pos);
+        if (chunkData == null) {
+            context.getSource().sendFailure(new TextComponent("The chunk at ")
+                    .append(new TextComponent(pos.toShortString()).withStyle(ChatFormatting.AQUA))
+                    .append(" is not claimed!"));
+            return Command.SINGLE_SUCCESS;
+        }
+        if (!context.getSource().hasPermission(Commands.LEVEL_GAMEMASTERS)) {
+            final var team = Banners.get(context.getSource().getServer()).getMembers(chunkData.banner());
+            if (team != null && !team.contains(context.getSource().getPlayerOrException().getUUID())) {
+                context.getSource().sendFailure(new TextComponent("You do not have permission to know the position of the banner protecting that chunk!"));
+                return Command.SINGLE_SUCCESS;
+            }
+        }
+        if (chunkData.bannerPos() != null) {
+            context.getSource().sendSuccess(new TextComponent("The banner protecting the chunk at ")
+                    .append(new TextComponent(pos.toShortString()).withStyle(ChatFormatting.AQUA))
+                    .append(" is at ")
+                    .append(new TextComponent(chunkData.bannerPos().toShortString()).withStyle(ChatFormatting.GOLD)), true);
+        } else {
+            context.getSource().sendFailure(new TextComponent("The position of the banner protecting that chunk is unknown! This may be caused by upgrading from an older version of SectionProtection."));
+        }
+        return Command.SINGLE_SUCCESS;
+    }
+
+    private static int unclaim(CommandContext<CommandSourceStack> context, BlockPos pos, boolean removeBanner) throws CommandSyntaxException {
+        final var manager = ClaimedChunks.get(context.getSource().getLevel());
+        final var data = manager.getOwner(pos);
+        if (data == null) {
+            context.getSource().sendFailure(new TextComponent("The chunk at ")
+                    .append(new TextComponent(pos.toShortString()).withStyle(ChatFormatting.AQUA))
+                    .append(" is not claimed!"));
+            return Command.SINGLE_SUCCESS;
+        }
+        if (!context.getSource().hasPermission(Commands.LEVEL_GAMEMASTERS)) {
+            final var team = Banners.get(context.getSource().getServer()).getMembers(data.banner());
+            if (team != null && !team.contains(context.getSource().getPlayerOrException().getUUID())) {
+                context.getSource().sendFailure(new TextComponent("You cannot unclaim somebody else's chunk!"));
+                return Command.SINGLE_SUCCESS;
+            }
+        }
+        manager.clearOwner(pos);
+        if (removeBanner && data.bannerPos() != null) {
+            final var be = context.getSource().getLevel().getBlockEntity(data.bannerPos());
+            if (be instanceof BannerExtension ext) {
+                ext.sectionProtectionUnclaim();
+            }
+            context.getSource().getLevel().destroyBlock(data.bannerPos(), true, context.getSource().getEntity());
+        }
+        context.getSource().sendSuccess(new TextComponent("Chunk at ").append(new TextComponent(pos.toShortString()).withStyle(ChatFormatting.AQUA))
+                .append(" has been unclaimed!"), true);
+        return Command.SINGLE_SUCCESS;
+    }
+
     private static int listConversionItems(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         MutableComponent text = new TextComponent("Items usable as conversion items: ");
         final var all = Stream.concat(
@@ -83,7 +152,7 @@ public class SPCommands {
                 text = text.append(", ");
             }
         }
-        context.getSource().sendSuccess(text, true);
+        context.getSource().sendSuccess(text, false);
         return Command.SINGLE_SUCCESS;
     }
 
@@ -103,14 +172,14 @@ public class SPCommands {
                 text = text.append(", ");
             }
         }
-        context.getSource().sendSuccess(text, true);
+        context.getSource().sendSuccess(text, false);
         return Command.SINGLE_SUCCESS;
     }
 
     private static int guideBook(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         if (context.getSource().getEntity() instanceof Player player) {
             if (player.getInventory().add(Constants.SP_BOOK.get())) {
-                context.getSource().sendSuccess(new TextComponent("You have been given a SectionProtection guide book!"), true);
+                context.getSource().sendSuccess(new TextComponent("You have been given a SectionProtection guide book!"), false);
             }
         }
         return Command.SINGLE_SUCCESS;
@@ -143,7 +212,7 @@ public class SPCommands {
         context.getSource().sendSuccess(new TextComponent("The positions of the chunk containing the block with the position ")
                 .append(new TextComponent(blockpos.toShortString()).withStyle(ChatFormatting.AQUA))
                 .append(" are ")
-                .append(new TextComponent(pos).withStyle(s -> s.withColor(ChatFormatting.GOLD).withClickEvent(new ClickEvent(ClickEvent.Action.COPY_TO_CLIPBOARD, pos)))), true);
+                .append(new TextComponent(pos).withStyle(s -> s.withColor(ChatFormatting.GOLD).withClickEvent(new ClickEvent(ClickEvent.Action.COPY_TO_CLIPBOARD, pos)))), false);
         return Command.SINGLE_SUCCESS;
     }
 
@@ -160,7 +229,7 @@ public class SPCommands {
         final var chunk = new ChunkPos(blockpos);
         final var manager = ClaimedChunks.get(dimension);
         Optional.ofNullable(manager.getOwner(chunk))
-            .map(ban -> Banners.get(context.getSource().getServer()).getMembers(ban))
+            .map(ban -> Banners.get(context.getSource().getServer()).getMembers(ban.banner()))
             .ifPresentOrElse(team -> {
                 final var members = team.stream()
                     .flatMap(uuid -> Utils.getPlayerName(context.getSource().getServer(), uuid).stream())
@@ -177,9 +246,9 @@ public class SPCommands {
                         text = text.append(", ");
                     }
                 }
-                context.getSource().sendSuccess(text, true);
+                context.getSource().sendSuccess(text, false);
             }, () -> context.getSource().sendSuccess(new TextComponent("No team owns the chunk at ")
-                    .append(new TextComponent(blockpos.toShortString()).withStyle(ChatFormatting.AQUA)), true));
+                    .append(new TextComponent(blockpos.toShortString()).withStyle(ChatFormatting.AQUA)), false));
         return Command.SINGLE_SUCCESS;
     }
 }

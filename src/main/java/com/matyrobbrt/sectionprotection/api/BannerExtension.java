@@ -7,4 +7,6 @@ public interface BannerExtension {
 
     void setSectionProtectionIsUnloaded(boolean isUnloaded);
     boolean getSectionProtectionIsUnloaded();
+
+    void sectionProtectionUnclaim();
 }

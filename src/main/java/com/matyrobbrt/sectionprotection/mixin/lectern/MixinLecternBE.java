@@ -154,12 +154,12 @@ public abstract class MixinLecternBE extends BlockEntity implements LecternExten
         }
 
         final var banners = Banners.get(level.getServer());
-        final var team = banners.getMembers(manager.getOwner(chunk));
+        final var team = banners.getMembers(manager.getOwner(chunk).banner());
         if (!players.isEmpty()) { // If empty, they want a list of members already in the team
             if (team == null) {
-                banners.createTeam(manager.getOwner(chunk), pPlayer.getUUID());
+                banners.createTeam(manager.getOwner(chunk).banner(), pPlayer.getUUID());
                 players.remove(pPlayer.getUUID());
-                banners.getMembers(manager.getOwner(chunk)).addAll(players);
+                banners.getMembers(manager.getOwner(chunk).banner()).addAll(players);
             } else {
                 if (!team.contains(pPlayer.getUUID())) {
                     return; // Don't do stuff on behlaf of another team
@@ -182,7 +182,7 @@ public abstract class MixinLecternBE extends BlockEntity implements LecternExten
         }
 
         // Now recreate the book
-        final var newTeam = banners.getMembers(manager.getOwner(chunk));
+        final var newTeam = banners.getMembers(manager.getOwner(chunk).banner());
         final var newBook = new ItemStack(pStack.getItem());
         final var newList = new ListTag();
         Lists.partition(newTeam, 6).forEach(sub -> {

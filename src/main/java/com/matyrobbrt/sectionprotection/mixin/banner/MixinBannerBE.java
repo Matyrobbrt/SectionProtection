@@ -1,10 +1,14 @@
 package com.matyrobbrt.sectionprotection.mixin.banner;
 
+import com.matyrobbrt.sectionprotection.ServerConfig;
+import com.matyrobbrt.sectionprotection.api.Banner;
 import com.matyrobbrt.sectionprotection.util.Constants;
 import com.matyrobbrt.sectionprotection.api.BannerExtension;
+import com.matyrobbrt.sectionprotection.world.ClaimedChunks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.entity.BannerBlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -68,5 +72,25 @@ public class MixinBannerBE extends BlockEntity implements BannerExtension {
     @Override
     public void setSectionProtectionIsUnloaded(boolean isUnloaded) {
         this.sectionprotection$unloaded = isUnloaded;
+    }
+
+    @Override
+    public void sectionProtectionUnclaim() {
+        if (
+            // @Volatile: MC calls setRemoved when a chunk unloads now as well (see ServerLevel#unload -> LevelChunk#clearAllBlockEntities).
+            // Since we don't want to remove the claimed status of a chunk (which also makes the server freeze in the case of a save in progress), we need to know if it was removed due to unloading.
+            // We can use "unloaded" for that, it's set in #onChunkUnloaded.
+            // Since MC first calls #onChunkUnloaded and then #setRemoved, this check keeps working.
+            !sectionprotection$unloaded
+            && isProtectionBanner() && level != null && !level.isClientSide()) {
+            final var pattern = Banner.from(((BannerBlockEntity) (Object) this).getPatterns());
+            final var claimData = ClaimedChunks.get(level);
+            ServerConfig.getChunksToClaim(new ChunkPos(getBlockPos()))
+                    .filter(chunk -> {
+                        final var owner = claimData.getOwner(chunk);
+                        return owner != null && owner.banner().equals(pattern);
+                    })
+                    .forEach(claimData::clearOwner);
+        }
     }
 }

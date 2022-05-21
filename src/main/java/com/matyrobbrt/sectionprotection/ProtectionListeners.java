@@ -102,7 +102,7 @@ public class ProtectionListeners {
             final var manager = ClaimedChunks.get(player.level);
             final var owner = manager.getOwner(posValue);
             if (owner != null) {
-                final var team = reg.getMembers(owner);
+                final var team = reg.getMembers(owner.banner());
                 if (tag != null && player.level.getBlockState(posValue).is(tag))
                     return;
                 if (team != null && !team.contains(player.getUUID())) {

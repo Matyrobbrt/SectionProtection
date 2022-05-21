@@ -131,7 +131,7 @@ public class MixinHooks {
                     final var team = banners.getMembers(pattern);
                     if (team != null) {
                         if (team.contains(pPlayer.getUUID())) {
-                            toClaim.forEach(c -> claimedData.setOwner(c, pattern));
+                            toClaim.forEach(c -> claimedData.setOwner(c, pattern, pPos));
                             extensionBanner.setProtectionBanner(true);
                             if (!pPlayer.isCreative() && ServerConfig.CONSUME_CONVERSION_ITEM.get()) {
                                 stack.shrink(1);
@@ -141,7 +141,7 @@ public class MixinHooks {
                         }
                     } else {
                         banners.createTeam(pattern, pPlayer.getUUID());
-                        toClaim.forEach(c -> claimedData.setOwner(c, pattern));
+                        toClaim.forEach(c -> claimedData.setOwner(c, pattern, pPos));
                         extensionBanner.setProtectionBanner(true);
                         if (!pPlayer.isCreative() && ServerConfig.CONSUME_CONVERSION_ITEM.get()) {
                             stack.shrink(1);
@@ -166,21 +166,7 @@ public class MixinHooks {
         }
 
         public static void setRemoved(BannerBlockEntity banner) {
-            final var ext = ((BannerExtension) banner);
-            if (
-                // @Volatile: MC calls setRemoved when a chunk unloads now as well (see ServerLevel#unload -> LevelChunk#clearAllBlockEntities).
-                // Since we don't want to remove the claimed status of a chunk (which also makes the server freeze in the case of a save in progress), we need to know if it was removed due to unloading.
-                // We can use "unloaded" for that, it's set in #onChunkUnloaded.
-                // Since MC first calls #onChunkUnloaded and then #setRemoved, this check keeps working.
-                !ext.getSectionProtectionIsUnloaded()
-
-                && ext.isProtectionBanner() && banner.getLevel() != null && !banner.getLevel().isClientSide()) {
-                final var pattern = Banner.from(banner.getPatterns());
-                final var claimData = ClaimedChunks.get(banner.getLevel());
-                ServerConfig.getChunksToClaim(new ChunkPos(banner.getBlockPos()))
-                    .filter(chunk -> Objects.equals(claimData.getOwner(chunk), pattern))
-                    .forEach(claimData::clearOwner);
-            }
+            ((BannerExtension) banner).sectionProtectionUnclaim();
         }
 
         public static void onUnloaded(BannerExtension banner) {
