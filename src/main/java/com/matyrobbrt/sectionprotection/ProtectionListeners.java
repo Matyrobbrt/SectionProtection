@@ -55,9 +55,23 @@ public class ProtectionListeners {
     }
 
     @SubscribeEvent
+    static void trample(final BlockEvent.FarmlandTrampleEvent event) {
+        if (event.getEntity() instanceof ServerPlayer player) {
+            checkCanExecute(event, player);
+        }
+    }
+
+    @SubscribeEvent
     static void interact(final PlayerInteractEvent.RightClickBlock event) {
         if (event.getPlayer() instanceof ServerPlayer player) {
             checkCanExecute(event, RightClickBlock::getPos, player, SPTags.ALLOW_INTERACTION);
+        }
+    }
+
+    @SubscribeEvent
+    static void interact(final PlayerInteractEvent.LeftClickBlock event) {
+        if (event.getPlayer() instanceof ServerPlayer player) {
+            checkCanExecute(event, PlayerInteractEvent.LeftClickBlock::getPos, player, SPTags.ALLOW_INTERACTION);
         }
     }
 
