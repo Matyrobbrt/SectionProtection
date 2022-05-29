@@ -8,6 +8,7 @@
     "MixinBannerDuplicateRecipe",
     "MixinBlock",
     "MixinBlockBehaviour",
+    "MixinBlockBehaviour$BlockStateBase",
     "MixinBlockEntity",
     "MixinBlockItem",
     "MixinExplosion",

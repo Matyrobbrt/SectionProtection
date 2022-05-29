@@ -1,10 +1,10 @@
 package com.matyrobbrt.sectionprotection.mixin.banner;
 
-import com.matyrobbrt.sectionprotection.ServerConfig;
+import com.matyrobbrt.sectionprotection.util.ServerConfig;
 import com.matyrobbrt.sectionprotection.util.Constants;
 import com.matyrobbrt.sectionprotection.SectionProtection;
 import com.matyrobbrt.sectionprotection.api.Banner;
-import com.matyrobbrt.sectionprotection.api.BannerExtension;
+import com.matyrobbrt.sectionprotection.api.extensions.BannerExtension;
 import com.matyrobbrt.sectionprotection.world.Banners;
 import com.matyrobbrt.sectionprotection.world.ClaimedChunks;
 import net.minecraft.ChatFormatting;
@@ -41,7 +41,7 @@ public abstract class MixinBannerBlock extends Block {
     @Inject(at = @At("TAIL"), method = "setPlacedBy(Lnet/minecraft/world/level/Level;Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/level/block/state/BlockState;Lnet/minecraft/world/entity/LivingEntity;Lnet/minecraft/world/item/ItemStack;)V")
     private void sectionprotection$setPlacedBy(Level pLevel, BlockPos pPos, BlockState pState, LivingEntity pPlacer,
         ItemStack pStack, CallbackInfo ci) {
-        if (pLevel.isClientSide) {
+        if (pLevel.isClientSide && !(pPlacer instanceof FakePlayer)) {
             return;
         }
         if (pStack.getOrCreateTag().contains(Constants.PROTECTION_BANNER)) {
@@ -52,8 +52,8 @@ public abstract class MixinBannerBlock extends Block {
                     if (pPlacer instanceof Player player && !(pPlacer instanceof FakePlayer)) {
                         final var manager = ClaimedChunks.get(pLevel);
                         final var chunks = ServerConfig.getChunksToClaim(new ChunkPos(pPos)).toList();
-                        if (chunks.stream().anyMatch(c -> manager.isOwned(c) || !SectionProtection.canClaimChunk(player, c)))
-                            return;
+                        if (chunks.stream().anyMatch(c -> (ServerConfig.ONLY_FULL_CLAIM.get() && manager.isOwned(c)) || !SectionProtection.canClaimChunk(player, c)))
+                            return; // Don't bother sending feedback... if they bypassed BlockItem#use then they probably are doing something weird
                         final var banners = Banners.get(Objects.requireNonNull(pLevel.getServer()));
                         final var pattern = Banner.from(banner.getPatterns());
                         final var team = banners.getMembers(pattern);

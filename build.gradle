@@ -2,6 +2,10 @@ import java.time.OffsetDateTime
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 
+plugins {
+    id 'com.github.johnrengelman.shadow' version '7.1.2'
+}
+
 var applyPlugins = [
     'eclipse', 'idea', 'maven-publish',
     'net.minecraftforge.gradle', 'org.parchmentmc.librarian.forgegradle',
@@ -16,6 +20,17 @@ def modid = properties.get('mod_id')
 version = properties.get('version')
 group = 'com.matyrobbrt.sectionprotection' // http://maven.apache.org/guides/mini/guide-naming-conventions.html
 archivesBaseName = "$modid-$mcVersion"
+
+sourceSets {
+    api {}
+}
+
+configurations {
+    library
+    implementation.extendsFrom(library)
+
+    apiImplementation.extendsFrom(minecraft)
+}
 
 mixin {
     add sourceSets.main, "${modid}.refmap.json"
@@ -34,7 +49,7 @@ minecraft {
     mappings channel: 'parchment', version: '2022.05.02-1.18.2'
 
     runs {
-        all {
+        configureEach {
             property 'forge.logging.markers', 'REGISTRIES'
             property 'forge.logging.console.level', 'debug'
             property 'forge.enabledGameTestNamespaces', 'sectionprotection'
@@ -42,13 +57,19 @@ minecraft {
 
             mods {
                 sectionprotection {
+                    source sourceSets.api
                     source sourceSets.main
                 }
+            }
+
+            lazyToken('minecraft_classpath') {
+                configurations.library.copyRecursive().resolve().collect { it.absolutePath }.join(File.pathSeparator)
             }
         }
 
         client {
             workingDirectory project.file('run')
+            args '--uuid', '5349e1faf20a47cfbd48b7acd2ac8dba'
         }
 
         server {
@@ -73,16 +94,40 @@ sourceSets.main.resources { srcDir 'src/generated/resources' }
 
 repositories {
     maven { url 'https://cursemaven.com' }
+    mavenCentral()
 }
 
 dependencies {
     minecraft "net.minecraftforge:forge:$mcVersion-$forge_version"
 
+    implementation sourceSets.api.output
+
     runtimeOnly fg.deobf("curse.maven:jei-238222:3745255")
     runtimeOnly fg.deobf("curse.maven:flywheel-486392:3737402")
     runtimeOnly fg.deobf("curse.maven:create-328085:3737418")
 
+    compileOnly fg.deobf("curse.maven:journeymap-32274:3796379")
+
     annotationProcessor 'org.spongepowered:mixin:0.8.4:processor'
+
+    library('io.github.matyrobbrt:asmutils:0.3.1') {
+        exclude module: 'asm'
+        exclude module: 'asm-tree'
+        exclude module: 'asm-util'
+        exclude module: 'asm-commons'
+        exclude module: 'slf4j-api'
+    }
+    library('io.github.matyrobbrt:eventdispatcher:1.6.0') {
+        // exclude module: 'asmutils'
+        exclude module: 'asm'
+        exclude module: 'asm-tree'
+        exclude module: 'asm-commons'
+        exclude module: 'slf4j-api'
+        exclude module: 'typetools'
+    }
+
+    compileOnly group:'com.google.auto.service', name:'auto-service', version:'1.0.1'
+    annotationProcessor group:'com.google.auto.service', name:'auto-service', version:'1.0.1'
 }
 
 final var expands = [
@@ -113,7 +158,24 @@ def manifestAttributes = [
 ] as Map
 
 jar {
-    manifest.attributes(manifestAttributes)
+    from sourceSets.api.output
+    archiveClassifier.set('slim')
+    manifest.attributes(manifestAttributes);
+}
+
+shadowJar {
+    from sourceSets.api.output
+    archiveClassifier.set('')
+    configurations = [project.configurations.library]
+    relocate 'io.github.matyrobbrt.asmutils', "${project.group}.shade.asmutils"
+    relocate 'io.github.matyrobbrt.eventdispatcher', "${project.group}.shade.eventdispatcher"
+    finalizedBy 'reobfShadowJar'
+}
+
+assemble.dependsOn shadowJar
+
+reobf {
+    shadowJar {}
 }
 
 jar.finalizedBy('reobfJar')

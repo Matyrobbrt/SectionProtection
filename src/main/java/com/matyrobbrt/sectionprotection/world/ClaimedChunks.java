@@ -2,6 +2,8 @@ package com.matyrobbrt.sectionprotection.world;
 
 import com.matyrobbrt.sectionprotection.SectionProtection;
 import com.matyrobbrt.sectionprotection.api.Banner;
+import com.matyrobbrt.sectionprotection.api.chunk.ChunkData;
+import com.matyrobbrt.sectionprotection.api.chunk.ChunkManager;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -16,7 +18,7 @@ import javax.annotation.Nullable;
 import java.util.HashMap;
 import java.util.Map;
 
-public class ClaimedChunks extends SavedData {
+public class ClaimedChunks extends SavedData implements ChunkManager {
 
     /**
      * This represents the current version of the SavedData, allowing us to convert data between
@@ -24,10 +26,12 @@ public class ClaimedChunks extends SavedData {
      */
     public static final int CURRENT_VERSION = 2;
 
+    private final ServerLevel level;
     private final Map<ChunkPos, ChunkData> chunks;
 
-    public ClaimedChunks() {
+    private ClaimedChunks(ServerLevel level) {
         this.chunks = new HashMap<>();
+        this.level = level;
     }
 
     @Nullable
@@ -48,18 +52,20 @@ public class ClaimedChunks extends SavedData {
         return isOwned(new ChunkPos(pos));
     }
 
+    @Override
     public void setOwner(ChunkPos pos, Banner newOwner, @Nullable BlockPos bannerPos) {
         chunks.put(pos, new ChunkData(newOwner, bannerPos));
         setDirty();
     }
 
-    public void clearOwner(ChunkPos pos) {
+    @Override
+    public void removeOwner(ChunkPos pos) {
         chunks.remove(pos);
         setDirty();
     }
 
-    public void clearOwner(BlockPos pos) {
-        clearOwner(new ChunkPos(pos));
+    public void removeOwner(BlockPos pos) {
+        removeOwner(new ChunkPos(pos));
     }
 
     @Override
@@ -76,9 +82,9 @@ public class ClaimedChunks extends SavedData {
         return pCompoundTag;
     }
 
-    public static ClaimedChunks load(CompoundTag nbt) {
+    public static ClaimedChunks load(CompoundTag nbt, ServerLevel level) {
         final var version = nbt.getInt("dataVersion");
-        final var chunks = new ClaimedChunks();
+        final var chunks = new ClaimedChunks(level);
         nbt.getList("data", Tag.TAG_COMPOUND).forEach(tag -> {
             final var cTag = (CompoundTag) tag;
             chunks.chunks.put(new ChunkPos(cTag.getLong("pos")), ChunkData.deserialize(cTag.get("owner")));
@@ -91,27 +97,8 @@ public class ClaimedChunks extends SavedData {
     }
 
     public static ClaimedChunks get(ServerLevel level) {
-        return level.getDataStorage().computeIfAbsent(ClaimedChunks::load, ClaimedChunks::new,
+        return level.getDataStorage().computeIfAbsent(nbt -> load(nbt, level), () -> new ClaimedChunks(level),
                 SectionProtection.MOD_ID + "_claimed_chunks");
     }
 
-    public record ChunkData(@NotNull Banner banner, @Nullable BlockPos bannerPos) {
-        public CompoundTag serialize() {
-            final var tag = new CompoundTag();
-            tag.put("banner", banner.serialize());
-            if (bannerPos != null) {
-                tag.putLong("bannerPos", bannerPos.asLong());
-            }
-            return tag;
-        }
-
-        public static ChunkData deserialize(Tag tag) {
-            if (tag instanceof ListTag list) {
-                return new ChunkData(new Banner(list), null);
-            } else if (tag instanceof CompoundTag cTag) {
-                return new ChunkData(new Banner(cTag.getList("banner", Tag.TAG_COMPOUND)), BlockPos.of(cTag.getLong("bannerPos")));
-            } else
-                throw new IllegalArgumentException("Cannot deserialize tag of type " + tag.getType());
-        }
-    }
 }

@@ -1,6 +1,6 @@
 package com.matyrobbrt.sectionprotection.mixin;
 
-import com.matyrobbrt.sectionprotection.ServerConfig;
+import com.matyrobbrt.sectionprotection.util.ServerConfig;
 import com.matyrobbrt.sectionprotection.world.ClaimedChunks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.ChunkPos;

@@ -1,18 +1,17 @@
 package com.matyrobbrt.sectionprotection.api;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-
 import com.google.common.collect.ImmutableList;
-
 import com.google.common.collect.Iterables;
 import com.mojang.datafixers.util.Pair;
 import net.minecraft.Util;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.level.block.entity.BannerPattern;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public record Banner(List<Data> data) {
 
@@ -64,7 +63,22 @@ public record Banner(List<Data> data) {
 
     @Override
     public int hashCode() {
-        return Objects.hash(data);
+        return hash(data);
+    }
+
+    public static int hash(List<?> list) {
+        int hashCode = 1;
+        for (final Object e : list)
+            hashCode = 31* hashCode + (e==null ? 0 : e.hashCode());
+        return hashCode;
+    }
+
+    public void encode(FriendlyByteBuf buf) {
+        buf.writeCollection(data, (bf, d) -> d.encode(bf));
+    }
+
+    public static Banner decode(FriendlyByteBuf buf) {
+        return new Banner(buf.readCollection(ArrayList::new, Data::decode));
     }
 
     public record Data(DyeColor color, BannerPattern pattern) {
@@ -82,6 +96,15 @@ public record Banner(List<Data> data) {
             tag.putInt("Color", color.getId());
             tag.putString("Pattern", pattern.getHashname());
             return tag;
+        }
+
+        public void encode(FriendlyByteBuf buf) {
+            buf.writeInt(color.getId());
+            buf.writeUtf(pattern.getHashname(), 5);
+        }
+
+        public static Data decode(FriendlyByteBuf buf) {
+            return new Data(buf.readInt(), buf.readUtf(5));
         }
     }
 

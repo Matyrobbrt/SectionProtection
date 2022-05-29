@@ -1,7 +1,7 @@
 package com.matyrobbrt.sectionprotection.mixin;
 
 import com.matyrobbrt.sectionprotection.MixinHooks;
-import com.matyrobbrt.sectionprotection.api.BannerExtension;
+import com.matyrobbrt.sectionprotection.api.extensions.BannerExtension;
 import net.minecraft.world.level.block.entity.BannerBlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import org.spongepowered.asm.mixin.Mixin;

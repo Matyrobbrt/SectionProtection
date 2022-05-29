@@ -1,9 +1,10 @@
 package com.matyrobbrt.sectionprotection;
 
 import com.matyrobbrt.sectionprotection.api.Banner;
-import com.matyrobbrt.sectionprotection.api.BannerExtension;
-import com.matyrobbrt.sectionprotection.api.LecternExtension;
+import com.matyrobbrt.sectionprotection.api.extensions.BannerExtension;
+import com.matyrobbrt.sectionprotection.api.extensions.LecternExtension;
 import com.matyrobbrt.sectionprotection.util.Constants;
+import com.matyrobbrt.sectionprotection.util.ServerConfig;
 import com.matyrobbrt.sectionprotection.util.Utils;
 import com.matyrobbrt.sectionprotection.world.Banners;
 import com.matyrobbrt.sectionprotection.world.ClaimedChunks;
@@ -51,19 +52,26 @@ public class MixinHooks {
             final var pattern = new Banner(BannerBlockEntity.getItemPatterns(pContext.getItemInHand()), bannerBlock.getColor());
             final var team = banners.getMembers(pattern);
             final var data = ClaimedChunks.get(pContext.getLevel());
-            final var cantClaim = ServerConfig.getChunksToClaim(pos)
-                .anyMatch(data::isOwned);
-            if (cantClaim) {
-                // Somebody owns it already
-                if (pContext.getPlayer() != null) {
-                    pContext.getPlayer().displayClientMessage(new TextComponent("It seems like the chunks you are about to claim are already claimed!")
-                            .withStyle(ChatFormatting.RED), true);
-                    if (pContext.getPlayer() instanceof ServerPlayer serverPlayer) {
-                        serverPlayer.inventoryMenu.sendAllDataToRemote();
+            final var toClaim = ServerConfig.getChunksToClaim(pos);
+            for (final var it = toClaim.iterator(); it.hasNext();) {
+                final var sub = it.next();
+                if (!SectionProtection.canClaimChunk(pContext.getPlayer(), pos)) {
+                    cir.setReturnValue(InteractionResult.FAIL);
+                    if (pContext.getPlayer() != null) {
+                        pContext.getPlayer().containerMenu.sendAllDataToRemote();
                     }
+                    return;
                 }
-                cir.setReturnValue(InteractionResult.FAIL);
-                return;
+                if (data.isOwned(sub)) {
+                    cir.setReturnValue(InteractionResult.FAIL);
+                    if (pContext.getPlayer() != null) {
+                        pContext.getPlayer().displayClientMessage(new TextComponent("The chunk at ")
+                                .append(new TextComponent(sub.getMiddleBlockPosition(64).toShortString()).withStyle(ChatFormatting.BLUE))
+                                .append(" is claimed already!").withStyle(ChatFormatting.RED), true);
+                        pContext.getPlayer().containerMenu.sendAllDataToRemote();
+                    }
+                    return;
+                }
             }
             if (pContext.getPlayer() == null || (
                     team != null && !team.contains(pContext.getPlayer().getUUID()))
@@ -113,8 +121,17 @@ public class MixinHooks {
             final var chunk = new ChunkPos(pPos);
             final var toClaim = ServerConfig.getChunksToClaim(chunk).toList();
             final var claimedData = ClaimedChunks.get(pLevel);
-            if (toClaim.stream().anyMatch(c -> claimedData.isOwned(c) || !SectionProtection.canClaimChunk(pPlayer, c)))
-                return;
+            for (final var subPos : toClaim) {
+                if (!SectionProtection.canClaimChunk(pPlayer, subPos))
+                    return;
+                else if (ServerConfig.ONLY_FULL_CLAIM.get() && claimedData.isOwned(subPos)) {
+                    pPlayer.displayClientMessage(new TextComponent("The chunk at ")
+                            .append(new TextComponent(subPos.getMiddleBlockPosition(64).toShortString()).withStyle(ChatFormatting.BLUE))
+                            .append(" is claimed already!").withStyle(ChatFormatting.RED), true);
+                    pPlayer.containerMenu.sendAllDataToRemote();
+                    return;
+                }
+            }
             pLevel.getBlockEntity(pPos, BlockEntityType.BANNER).ifPresent(banner -> {
                 final var extensionBanner = ((BannerExtension) banner);
                 final var stack = pPlayer.getItemInHand(pHand);

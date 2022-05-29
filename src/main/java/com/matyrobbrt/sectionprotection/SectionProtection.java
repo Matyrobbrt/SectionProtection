@@ -1,9 +1,13 @@
 package com.matyrobbrt.sectionprotection;
 
+import com.matyrobbrt.sectionprotection.api.ActionType;
+import com.matyrobbrt.sectionprotection.api.SectionProtectionAPI;
+import com.matyrobbrt.sectionprotection.client.SPClient;
 import com.matyrobbrt.sectionprotection.commands.SPCommands;
 import com.matyrobbrt.sectionprotection.recipe.RecipeEnabledCondition;
 import com.matyrobbrt.sectionprotection.util.Constants;
 import com.matyrobbrt.sectionprotection.util.SPVersion;
+import com.matyrobbrt.sectionprotection.util.ServerConfig;
 import com.matyrobbrt.sectionprotection.util.Utils;
 import com.mojang.logging.LogUtils;
 import net.minecraft.ChatFormatting;
@@ -13,6 +17,8 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.crafting.CraftingHelper;
 import net.minecraftforge.event.RegistryEvent;
@@ -24,6 +30,7 @@ import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.minecraftforge.fml.loading.FMLLoader;
 import net.minecraftforge.network.NetworkConstants;
 import org.slf4j.Logger;
 
@@ -34,9 +41,13 @@ import java.util.jar.Manifest;
 @Mod(SectionProtection.MOD_ID)
 public class SectionProtection {
 
+    static {
+        // io.github.matyrobbrt.asmutils.ClassNameGenerator.setBasePackageName(SectionProtection.class.getPackageName() + ".asm");
+    }
+
     @Nullable
     public static final SPVersion VERSION;
-    public static final String MOD_ID = "sectionprotection";
+    public static final String MOD_ID = SectionProtectionAPI.MOD_ID;
     public static final Logger LOGGER = LogUtils.getLogger();
 
     public SectionProtection() {
@@ -48,10 +59,18 @@ public class SectionProtection {
 
         bus.register(ServerConfig.class);
         bus.addGenericListener(RecipeSerializer.class, (final RegistryEvent.Register<RecipeSerializer<?>> event) -> CraftingHelper.register(new RecipeEnabledCondition.Serializer()));
+        // bus.addListener((final FMLCommonSetupEvent event) -> SPNetwork.register());
 
         MinecraftForge.EVENT_BUS.addListener(SPCommands::register);
         MinecraftForge.EVENT_BUS.register(SectionProtection.class);
         MinecraftForge.EVENT_BUS.register(ProtectionListeners.class);
+
+        if (FMLLoader.getDist() == Dist.CLIENT) {
+            new SPClient(bus);
+        }
+
+        SectionProtectionAPI.INSTANCE.registerPredicate(ActionType.PLACING, ((player, blockSnapshot, placedAgainst) -> ActionType.Result.ALLOW));
+        SectionProtectionAPI.INSTANCE.registerPredicate(ActionType.BREAKING, (player, world, pos, state) -> state.getBlock() == Blocks.STONE ? ActionType.Result.DENY : ActionType.Result.ALLOW);
     }
 
     @SubscribeEvent
@@ -78,7 +97,9 @@ public class SectionProtection {
     public static boolean canClaimChunk(@Nullable Player player, ChunkPos chunk) {
         final var canClaim = !ServerConfig.UNCLAIMABLE_CHUNKS.get().contains(chunk);
         if (!canClaim && player != null)
-            player.displayClientMessage(new TextComponent("This chunk cannot be claimed!")
+            player.displayClientMessage(new TextComponent("The chunk at ")
+                            .append(new TextComponent(chunk.getMiddleBlockPosition(64).toShortString()).withStyle(ChatFormatting.BLUE))
+                            .append(" cannot be claimed!")
                     .withStyle(ChatFormatting.RED), true);
         return canClaim;
     }

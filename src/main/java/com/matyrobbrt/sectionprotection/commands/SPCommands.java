@@ -4,11 +4,11 @@ import static net.minecraft.commands.Commands.argument;
 import static net.minecraft.commands.Commands.literal;
 import static net.minecraft.commands.arguments.coordinates.BlockPosArgument.ERROR_NOT_LOADED;
 import static net.minecraft.commands.arguments.coordinates.BlockPosArgument.ERROR_OUT_OF_WORLD;
-import com.matyrobbrt.sectionprotection.api.BannerExtension;
+import com.matyrobbrt.sectionprotection.api.extensions.BannerExtension;
 import com.matyrobbrt.sectionprotection.util.FakePlayerHolder;
 import com.matyrobbrt.sectionprotection.SPTags;
 import com.matyrobbrt.sectionprotection.SectionProtection;
-import com.matyrobbrt.sectionprotection.ServerConfig;
+import com.matyrobbrt.sectionprotection.util.ServerConfig;
 import com.matyrobbrt.sectionprotection.util.Constants;
 import com.matyrobbrt.sectionprotection.util.Utils;
 import com.matyrobbrt.sectionprotection.world.Banners;
@@ -126,7 +126,7 @@ public class SPCommands {
                 return Command.SINGLE_SUCCESS;
             }
         }
-        manager.clearOwner(pos);
+        manager.removeOwner(pos);
         if (removeBanner && data.bannerPos() != null) {
             final var be = context.getSource().getLevel().getBlockEntity(data.bannerPos());
             if (be instanceof BannerExtension ext) {

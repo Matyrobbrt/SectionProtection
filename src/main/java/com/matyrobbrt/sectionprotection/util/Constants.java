@@ -3,10 +3,8 @@ package com.matyrobbrt.sectionprotection.util;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.matyrobbrt.sectionprotection.SectionProtection;
-import com.matyrobbrt.sectionprotection.ServerConfig;
 import com.matyrobbrt.sectionprotection.api.Banner;
 import net.minecraft.ChatFormatting;
-import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
@@ -24,6 +22,8 @@ public class Constants {
     public static final String PROTECTION_BANNER = SectionProtection.MOD_ID + ":protection_banner";
     public static final String PROTECTION_LECTERN = SectionProtection.MOD_ID + ":protection_lectern";
     public static final String SP_GUIDE_TAG = SectionProtection.MOD_ID + ":guide";
+
+    public static final String JOURNEYMAP = "journeymap";
 
     public static final Gson GSON = new GsonBuilder().setLenient().create();
 

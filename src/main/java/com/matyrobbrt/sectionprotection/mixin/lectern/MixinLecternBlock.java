@@ -2,8 +2,8 @@ package com.matyrobbrt.sectionprotection.mixin.lectern;
 
 import static net.minecraft.world.level.block.LecternBlock.resetBookState;
 import com.matyrobbrt.sectionprotection.SectionProtection;
-import com.matyrobbrt.sectionprotection.ServerConfig;
-import com.matyrobbrt.sectionprotection.api.LecternExtension;
+import com.matyrobbrt.sectionprotection.util.ServerConfig;
+import com.matyrobbrt.sectionprotection.api.extensions.LecternExtension;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.sounds.SoundEvents;

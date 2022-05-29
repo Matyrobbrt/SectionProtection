@@ -13,10 +13,6 @@ public class SPTags {
 
     public static final TagKey<Item> IS_CONVERSION_ITEM = create(ITEM_REGISTRY, "conversion_item");
 
-    public static final TagKey<Block> ALLOW_INTERACTION = create(BLOCK_REGISTRY, "allow_interaction");
-    public static final TagKey<Block> ALLOW_BREAKING = create(BLOCK_REGISTRY, "allow_breaking");
-    public static final TagKey<Block> ALLOW_PLACING = create(BLOCK_REGISTRY, "allow_placing");
-
     private static <K> TagKey<K> create(ResourceKey<? extends Registry<K>> key, String name) {
         return TagKey.create(key, new ResourceLocation(SectionProtection.MOD_ID, name));
     }

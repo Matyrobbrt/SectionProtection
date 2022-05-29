@@ -1,5 +1,6 @@
-package com.matyrobbrt.sectionprotection;
+package com.matyrobbrt.sectionprotection.util;
 
+import com.matyrobbrt.sectionprotection.SectionProtection;
 import com.matyrobbrt.sectionprotection.recipe.RecipeEnabledCondition;
 import com.matyrobbrt.sectionprotection.util.Utils;
 import com.matyrobbrt.sectionprotection.util.Value;
@@ -29,6 +30,8 @@ public class ServerConfig {
     // Claiming
     public static final ChunksValueConfig UNCLAIMABLE_CHUNKS;
     public static final ForgeConfigSpec.IntValue CLAIM_RADIUS;
+    public static final ForgeConfigSpec.BooleanValue HIGHLIGHT_MAP;
+    public static final ForgeConfigSpec.BooleanValue ONLY_FULL_CLAIM;
 
     // Default Protection
     public static final ChunksValueConfig DEFAULT_MOB_GRIEFING_PROTECTED;
@@ -62,6 +65,12 @@ public class ServerConfig {
             CLAIM_RADIUS = builder.comment("The radius of the area that a banner claims chunks around.",
                             "0 creates a 1x1 area, 1 creates a 3x3 area, etc.")
                     .defineInRange("claim_radius", 0, 0, Byte.MAX_VALUE);
+
+            HIGHLIGHT_MAP = builder.comment("EXPERIMENTAL FEATURE!", "If the base colour of the banner protecting a chunk should be used to highlight that chunk on a vanilla map.")
+                    .define("experimental_highlight_map", false);
+
+            ONLY_FULL_CLAIM = builder.comment("If claiming an area of chunks should be allowed only if none of those chunks are claimed already.")
+                    .define("only_full_claim", true);
         }
         builder.pop();
 
@@ -142,6 +151,7 @@ public class ServerConfig {
             return new ChunksValueConfig(defaultValues.stream().flatMap(str -> Utils.chunkPosFromString(str).stream()).collect(Collectors.toSet()), cfg);
         }
 
+        @SuppressWarnings("all")
         public ForgeConfigSpec.BooleanValue defineRecipeEnabled(String type) {
             final var cfg = comment("If recipes of the type \"" + type + "\" should be enabled.")
                 .define(type, true);

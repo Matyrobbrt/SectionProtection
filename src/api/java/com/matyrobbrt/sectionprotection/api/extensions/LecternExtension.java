@@ -1,4 +1,4 @@
-package com.matyrobbrt.sectionprotection.api;
+package com.matyrobbrt.sectionprotection.api.extensions;
 
 public interface LecternExtension {
 

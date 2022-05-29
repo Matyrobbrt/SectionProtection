@@ -1,9 +1,9 @@
 package com.matyrobbrt.sectionprotection.mixin.banner;
 
-import com.matyrobbrt.sectionprotection.ServerConfig;
+import com.matyrobbrt.sectionprotection.util.ServerConfig;
 import com.matyrobbrt.sectionprotection.api.Banner;
 import com.matyrobbrt.sectionprotection.util.Constants;
-import com.matyrobbrt.sectionprotection.api.BannerExtension;
+import com.matyrobbrt.sectionprotection.api.extensions.BannerExtension;
 import com.matyrobbrt.sectionprotection.world.ClaimedChunks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -88,9 +88,12 @@ public class MixinBannerBE extends BlockEntity implements BannerExtension {
             ServerConfig.getChunksToClaim(new ChunkPos(getBlockPos()))
                     .filter(chunk -> {
                         final var owner = claimData.getOwner(chunk);
-                        return owner != null && owner.banner().equals(pattern);
+                        if (owner != null) {
+                            return owner.banner().equals(pattern) && (owner.bannerPos() == null || worldPosition.equals(owner.bannerPos()));
+                        }
+                        return false;
                     })
-                    .forEach(claimData::clearOwner);
+                    .forEach(claimData::removeOwner);
         }
     }
 }
