@@ -124,12 +124,14 @@ public class MixinHooks {
             for (final var subPos : toClaim) {
                 if (!SectionProtection.canClaimChunk(pPlayer, subPos)) {
                     pPlayer.containerMenu.sendAllDataToRemote();
+                    cir.setReturnValue(InteractionResult.FAIL);
                     return;
                 } else if (ServerConfig.ONLY_FULL_CLAIM.get() && claimedData.isOwned(subPos)) {
                     pPlayer.displayClientMessage(new TextComponent("The chunk at ")
                             .append(new TextComponent(subPos.getMiddleBlockPosition(64).toShortString()).withStyle(ChatFormatting.BLUE))
                             .append(" is claimed already!").withStyle(ChatFormatting.RED), true);
                     pPlayer.containerMenu.sendAllDataToRemote();
+                    cir.setReturnValue(InteractionResult.FAIL);
                     return;
                 }
             }
