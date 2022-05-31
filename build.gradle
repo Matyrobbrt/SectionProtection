@@ -280,6 +280,7 @@ if (project.hasProperty("close")) {
 
 tasks.register('publishCurseForge', TaskPublishCurseForge) {
     it.apiToken = findProperty('curseforgeKey')
+    it.group = 'publishing'
 
     var projectId = findProperty('curseforge_project')
     var mainFile = it.upload(projectId, jar)
