@@ -16,6 +16,7 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
+import java.lang.ref.WeakReference;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -29,12 +30,10 @@ public class ClaimedChunks extends SavedData implements ChunkManager {
      */
     public static final int CURRENT_VERSION = 2;
 
-    private final ServerLevel level;
     private final Map<ChunkPos, ChunkData> chunks;
 
-    private ClaimedChunks(ServerLevel level) {
+    private ClaimedChunks() {
         this.chunks = new HashMap<>();
-        this.level = level;
     }
 
     @Nullable
@@ -86,9 +85,9 @@ public class ClaimedChunks extends SavedData implements ChunkManager {
         return pCompoundTag;
     }
 
-    public static ClaimedChunks load(CompoundTag nbt, ServerLevel level) {
+    public static ClaimedChunks load(CompoundTag nbt) {
         final var version = nbt.getInt("dataVersion");
-        final var chunks = new ClaimedChunks(level);
+        final var chunks = new ClaimedChunks();
         nbt.getList("data", Tag.TAG_COMPOUND).forEach(tag -> {
             final var cTag = (CompoundTag) tag;
             chunks.chunks.put(new ChunkPos(cTag.getLong("pos")), ChunkData.deserialize(cTag.get("owner")));
@@ -101,7 +100,7 @@ public class ClaimedChunks extends SavedData implements ChunkManager {
     }
 
     public static ClaimedChunks get(ServerLevel level) {
-        return level.getDataStorage().computeIfAbsent(nbt -> load(nbt, level), () -> new ClaimedChunks(level),
+        return level.getDataStorage().computeIfAbsent(ClaimedChunks::load, ClaimedChunks::new,
                 SectionProtection.MOD_ID + "_claimed_chunks");
     }
 

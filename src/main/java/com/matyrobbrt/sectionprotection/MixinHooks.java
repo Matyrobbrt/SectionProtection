@@ -183,11 +183,11 @@ public class MixinHooks {
         }
 
         public static void setRemoved(BannerBlockEntity banner) {
-            ((BannerExtension) banner).sectionProtectionUnclaim();
+             ((BannerExtension) banner).sectionProtectionUnclaim();
         }
 
         public static void onUnloaded(BannerExtension banner) {
-            banner.setSectionProtectionIsUnloaded(true);
+             banner.setSectionProtectionIsUnloaded(true);
         }
     }
 }

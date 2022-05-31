@@ -39,10 +39,6 @@ import java.util.jar.Manifest;
 @Mod(SectionProtection.MOD_ID)
 public class SectionProtection {
 
-    static {
-        // io.github.matyrobbrt.asmutils.ClassNameGenerator.setBasePackageName(SectionProtection.class.getPackageName() + ".asm");
-    }
-
     @Nullable
     public static final SPVersion VERSION;
     public static final String MOD_ID = SectionProtectionAPI.MOD_ID;
