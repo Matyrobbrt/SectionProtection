@@ -1,6 +1,5 @@
 package com.matyrobbrt.sectionprotection;
 
-import com.matyrobbrt.sectionprotection.api.ActionType;
 import com.matyrobbrt.sectionprotection.api.SectionProtectionAPI;
 import com.matyrobbrt.sectionprotection.client.SPClient;
 import com.matyrobbrt.sectionprotection.commands.SPCommands;
@@ -17,7 +16,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.level.ChunkPos;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.crafting.CraftingHelper;
@@ -68,9 +66,6 @@ public class SectionProtection {
         if (FMLLoader.getDist() == Dist.CLIENT) {
             new SPClient(bus);
         }
-
-        SectionProtectionAPI.INSTANCE.registerPredicate(ActionType.PLACING, ((player, blockSnapshot, placedAgainst) -> ActionType.Result.ALLOW));
-        SectionProtectionAPI.INSTANCE.registerPredicate(ActionType.BREAKING, (player, world, pos, state) -> state.getBlock() == Blocks.STONE ? ActionType.Result.DENY : ActionType.Result.ALLOW);
     }
 
     @SubscribeEvent

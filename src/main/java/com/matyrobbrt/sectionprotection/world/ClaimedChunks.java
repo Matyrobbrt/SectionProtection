@@ -1,9 +1,9 @@
 package com.matyrobbrt.sectionprotection.world;
 
 import com.matyrobbrt.sectionprotection.SectionProtection;
-import com.matyrobbrt.sectionprotection.api.Banner;
 import com.matyrobbrt.sectionprotection.api.chunk.ChunkData;
 import com.matyrobbrt.sectionprotection.api.chunk.ChunkManager;
+import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -15,9 +15,12 @@ import net.minecraft.world.level.saveddata.SavedData;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
+import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.HashMap;
 import java.util.Map;
 
+@MethodsReturnNonnullByDefault
+@ParametersAreNonnullByDefault
 public class ClaimedChunks extends SavedData implements ChunkManager {
 
     /**
@@ -53,19 +56,20 @@ public class ClaimedChunks extends SavedData implements ChunkManager {
     }
 
     @Override
-    public void setOwner(ChunkPos pos, Banner newOwner, @Nullable BlockPos bannerPos) {
-        chunks.put(pos, new ChunkData(newOwner, bannerPos));
+    public void setData(ChunkPos pos, ChunkData data) {
+        chunks.put(pos, data);
         setDirty();
     }
 
     @Override
-    public void removeOwner(ChunkPos pos) {
-        chunks.remove(pos);
+    public ChunkData removeData(ChunkPos pos) {
+        final var data = chunks.remove(pos);
         setDirty();
+        return data;
     }
 
     public void removeOwner(BlockPos pos) {
-        removeOwner(new ChunkPos(pos));
+        removeData(new ChunkPos(pos));
     }
 
     @Override

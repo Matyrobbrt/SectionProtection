@@ -1,4 +1,4 @@
-package com.matyrobbrt.sectionprotection.api;
+package com.matyrobbrt.sectionprotection.api.banner;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
@@ -13,6 +13,10 @@ import net.minecraft.world.level.block.entity.BannerPattern;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Represents a banner.
+ * @param data the banner's patterns
+ */
 public record Banner(List<Data> data) {
 
     public Banner(ListTag nbt) {
@@ -81,6 +85,11 @@ public record Banner(List<Data> data) {
         return new Banner(buf.readCollection(ArrayList::new, Data::decode));
     }
 
+    /**
+     * Represents the pattern of a banner.
+     * @param color the colour
+     * @param pattern the pattern
+     */
     public record Data(DyeColor color, BannerPattern pattern) {
 
         public Data(int color, String pattern) {

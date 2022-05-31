@@ -1,6 +1,6 @@
 package com.matyrobbrt.sectionprotection;
 
-import com.matyrobbrt.sectionprotection.api.Banner;
+import com.matyrobbrt.sectionprotection.api.banner.Banner;
 import com.matyrobbrt.sectionprotection.api.extensions.BannerExtension;
 import com.matyrobbrt.sectionprotection.api.extensions.LecternExtension;
 import com.matyrobbrt.sectionprotection.util.Constants;
@@ -135,7 +135,7 @@ public class MixinHooks {
             pLevel.getBlockEntity(pPos, BlockEntityType.BANNER).ifPresent(banner -> {
                 final var extensionBanner = ((BannerExtension) banner);
                 final var stack = pPlayer.getItemInHand(pHand);
-                final var pattern = com.matyrobbrt.sectionprotection.api.Banner.from(banner.getPatterns());
+                final var pattern = Banner.from(banner.getPatterns());
                 if (pattern.equals(Constants.OMINOUS)) {
                     pPlayer.sendMessage(new TextComponent("Sorry, but Ominous Banners cannot be converted into Protection Banners."), Util.NIL_UUID);
                     return;

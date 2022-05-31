@@ -3,7 +3,7 @@ package com.matyrobbrt.sectionprotection.mixin.banner;
 import com.matyrobbrt.sectionprotection.util.ServerConfig;
 import com.matyrobbrt.sectionprotection.util.Constants;
 import com.matyrobbrt.sectionprotection.SectionProtection;
-import com.matyrobbrt.sectionprotection.api.Banner;
+import com.matyrobbrt.sectionprotection.api.banner.Banner;
 import com.matyrobbrt.sectionprotection.api.extensions.BannerExtension;
 import com.matyrobbrt.sectionprotection.world.Banners;
 import com.matyrobbrt.sectionprotection.world.ClaimedChunks;

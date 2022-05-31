@@ -17,6 +17,7 @@ import java.util.EnumMap;
 import java.util.Map;
 import java.util.Objects;
 
+@Deprecated(since = "Not currently implemented")
 public class SPNetwork {
 
     public static final ResourceLocation EXISTENCE_CHANNEL_NAME = new ResourceLocation(SectionProtection.MOD_ID, "exists");
@@ -40,7 +41,7 @@ public class SPNetwork {
                     .simpleChannel();
 
             for (final var pkt : feature.getPackets()) {
-                SPPacket.register(channel, index++, pkt);
+                // SPPacket.register(channel, index++, pkt);
             }
 
             FEATURE_CHANNELS.put(feature, channel);

@@ -1,6 +1,6 @@
 package com.matyrobbrt.sectionprotection.api.chunk;
 
-import com.matyrobbrt.sectionprotection.api.Banner;
+import com.matyrobbrt.sectionprotection.api.banner.Banner;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -10,6 +10,11 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
 
+/**
+ * Represents the data of a chunk.
+ * @param banner the banner protecting the chunk
+ * @param bannerPos the position of the banner protecting the chunk
+ */
 public record ChunkData(@NotNull Banner banner, @Nullable BlockPos bannerPos) {
     public CompoundTag serialize() {
         final var tag = new CompoundTag();

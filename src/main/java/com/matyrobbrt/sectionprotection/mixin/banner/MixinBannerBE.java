@@ -1,7 +1,7 @@
 package com.matyrobbrt.sectionprotection.mixin.banner;
 
 import com.matyrobbrt.sectionprotection.util.ServerConfig;
-import com.matyrobbrt.sectionprotection.api.Banner;
+import com.matyrobbrt.sectionprotection.api.banner.Banner;
 import com.matyrobbrt.sectionprotection.util.Constants;
 import com.matyrobbrt.sectionprotection.api.extensions.BannerExtension;
 import com.matyrobbrt.sectionprotection.world.ClaimedChunks;
@@ -93,7 +93,7 @@ public class MixinBannerBE extends BlockEntity implements BannerExtension {
                         }
                         return false;
                     })
-                    .forEach(claimData::removeOwner);
+                    .forEach(claimData::removeData);
         }
     }
 }

@@ -10,6 +10,7 @@ import com.matyrobbrt.sectionprotection.world.ClaimedChunks;
 import net.minecraft.ChatFormatting;
 import net.minecraft.Util;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Registry;
 import net.minecraft.network.chat.ChatType;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.TextComponent;
@@ -36,7 +37,7 @@ public class ProtectionListeners {
     @SubscribeEvent
     static void onPlaceEvent(final BlockEvent.EntityPlaceEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
-            if (event.getPlacedBlock().is(ActionType.PLACING.getTag()))
+            if (event.getPlacedBlock().is(ActionType.PLACING.getTag(Registry.BLOCK_REGISTRY)))
                 return;
             if (checkPredicates(APIImpl.getPredicates(ActionType.PLACING), ActionType.PLACING,
                     ctx -> ctx.canPlace(player, event.getBlockSnapshot(), event.getPlacedAgainst())))
@@ -72,8 +73,9 @@ public class ProtectionListeners {
         if (event.getPlayer() instanceof ServerPlayer player) {
             if (event.getItemStack().getItem() instanceof BlockItem)
                 return; // Block item place is considered a right click event
-            checkCanExecute(event, RightClickBlock::getPos, player, ActionType.INTERACTION,
-                    ctx -> ctx.canInteract(player, ActionType.InteractionContext.InteractionType.RIGHT_CLICK, event.getHand(), event.getWorld(), event.getPos()),
+            checkCanExecute(event, RightClickBlock::getPos, player, ActionType.BLOCK_INTERACTION,
+                    ctx -> ctx.canInteract(player, ActionType.InteractionContext.InteractionType.RIGHT_CLICK,
+                            event.getHand(), event.getWorld(), event.getPos(), event.getWorld().getBlockState(event.getPos())),
                     true);
         }
     }
@@ -81,8 +83,9 @@ public class ProtectionListeners {
     @SubscribeEvent
     static void attack(final AttackBlockEvent event) {
         if (event.getPlayer() instanceof ServerPlayer player) {
-            checkCanExecute(event, AttackBlockEvent::getPos, player, ActionType.INTERACTION,
-                    ctx -> ctx.canInteract(player, ActionType.InteractionContext.InteractionType.LEFT_CLICK, event.getHand(), event.getLevel(), event.getPos()),
+            checkCanExecute(event, AttackBlockEvent::getPos, player, ActionType.BLOCK_INTERACTION,
+                    ctx -> ctx.canInteract(player, ActionType.InteractionContext.InteractionType.LEFT_CLICK,
+                            event.getHand(), event.getLevel(), event.getPos(), event.getLevel().getBlockState(event.getPos())),
                     false);
         }
     }
@@ -131,7 +134,7 @@ public class ProtectionListeners {
             final var owner = manager.getOwner(posValue);
             if (owner != null) {
                 final var team = reg.getMembers(owner.banner());
-                if (type != null && player.level.getBlockState(posValue).is(type.getTag()))
+                if (type != null && player.level.getBlockState(posValue).is(type.getTag(Registry.BLOCK_REGISTRY)))
                     return;
                 if (team != null && !team.contains(player.getUUID())) {
                     if (type != null && checker != null && checkPredicates(APIImpl.getPredicates(type), type, checker))

@@ -1,15 +1,19 @@
+import net.darkhax.curseforgegradle.TaskPublishCurseForge
+
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 
 plugins {
-    id 'com.github.johnrengelman.shadow' version '7.1.2'
+    id 'net.darkhax.curseforgegradle' version '1.0.10'
 }
 
-var applyPlugins = [
-    'eclipse', 'idea', 'maven-publish',
+final var applyPlugins = [
+    'eclipse', 'idea',
     'net.minecraftforge.gradle', 'org.parchmentmc.librarian.forgegradle',
-    'org.spongepowered.mixin'
+    'org.spongepowered.mixin',
+
+    'maven-publish', 'signing', 'io.codearte.nexus-staging'
 ]
 applyPlugins.forEach(pl -> apply plugin: pl)
 
@@ -102,29 +106,13 @@ dependencies {
 
     implementation sourceSets.api.output
 
-    runtimeOnly fg.deobf("curse.maven:jei-238222:3745255")
-    runtimeOnly fg.deobf("curse.maven:flywheel-486392:3737402")
-    runtimeOnly fg.deobf("curse.maven:create-328085:3737418")
+//    runtimeOnly fg.deobf("curse.maven:jei-238222:3745255")
+//    runtimeOnly fg.deobf("curse.maven:flywheel-486392:3737402")
+//    runtimeOnly fg.deobf("curse.maven:create-328085:3737418")
 
     compileOnly fg.deobf("curse.maven:journeymap-32274:3796379")
 
     annotationProcessor 'org.spongepowered:mixin:0.8.4:processor'
-
-    library('io.github.matyrobbrt:asmutils:0.3.1') {
-        exclude module: 'asm'
-        exclude module: 'asm-tree'
-        exclude module: 'asm-util'
-        exclude module: 'asm-commons'
-        exclude module: 'slf4j-api'
-    }
-    library('io.github.matyrobbrt:eventdispatcher:1.6.0') {
-        // exclude module: 'asmutils'
-        exclude module: 'asm'
-        exclude module: 'asm-tree'
-        exclude module: 'asm-commons'
-        exclude module: 'slf4j-api'
-        exclude module: 'typetools'
-    }
 
     compileOnly group:'com.google.auto.service', name:'auto-service', version:'1.0.1'
     annotationProcessor group:'com.google.auto.service', name:'auto-service', version:'1.0.1'
@@ -135,8 +123,12 @@ final var expands = [
     'modid': modid
 ]
 
+// This block of code expands all the gradle properties in the specified resource targets.
+// It copies them into the targets and expands all the defined properties.
+def resourceTargets = ['META-INF/mods.toml', 'pack.mcmeta']
 processResources {
-    filesMatching('META-INF/mods.toml') {
+    inputs.properties expands
+    filesMatching(resourceTargets) {
         expand expands
     }
     exclude ".cache/cache"
@@ -149,7 +141,7 @@ def manifestAttributes = [
     "Specification-Vendor"    : "Matyrobbrt",
     "Specification-Version"   : "1",
     "Implementation-Title"    : project.name,
-    "Implementation-Version"  : project.jar.archiveVersion,
+    "Implementation-Version"  : version,
     "Implementation-Vendor"   : "Matyrobbrt",
     "Timestamp"               : currentDateTime,
     "Git-Commit"              : versions.getCommitId(),
@@ -159,38 +151,102 @@ def manifestAttributes = [
 
 jar {
     from sourceSets.api.output
-    archiveClassifier.set('slim')
     manifest.attributes(manifestAttributes);
 }
 
-shadowJar {
-    from sourceSets.api.output
-    archiveClassifier.set('')
-    configurations = [project.configurations.library]
-    relocate 'io.github.matyrobbrt.asmutils', "${project.group}.shade.asmutils"
-    relocate 'io.github.matyrobbrt.eventdispatcher', "${project.group}.shade.eventdispatcher"
-    finalizedBy 'reobfShadowJar'
+tasks.register('api', Jar) {
+    it.from sourceSets.api.output
+    final var attr = new HashMap<>(manifestAttributes);
+    attr.remove('MixinConfigs')
+    it.manifest.attributes(attr)
+    it.archiveClassifier.set('api')
 }
 
-assemble.dependsOn shadowJar
-
-reobf {
-    shadowJar {}
+tasks.register('apiSources', Jar) {
+    it.from sourceSets.api.allSource
+    final var attr = new HashMap<>(manifestAttributes);
+    attr.remove('MixinConfigs')
+    it.manifest.attributes(attr)
+    it.archiveClassifier.set('api-sources')
 }
 
 jar.finalizedBy('reobfJar')
 
+task sourcesJar(type: Jar, dependsOn: classes) {
+    classifier = 'sources'
+    from sourceSets.main.allSource
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier = 'javadoc'
+    from javadoc.destinationDir
+}
+
 publishing {
     publications {
-        mavenJava(MavenPublication) {
-            artifact jar
+        maven(MavenPublication) {
+            groupId = 'com.matyrobbrt.mc.sectionprotection'
+            artifactId = "${modid}-${mcVersion}"
+
+            artifacts = [jar, javadocJar, sourcesJar, api, apiSources]
+
+            pom {
+                name = "SectionProtection"
+                description = "A Minecraft vanilla-styled chunk claiming mod."
+                url = 'https://github.com/Matyrobbrt/SectionProtection'
+                licenses {
+                    license {
+                        name = 'MIT License'
+                        url = 'https://www.opensource.org/licenses/mit-license.php'
+                    }
+                }
+                developers {
+                    developer {
+                        id = 'matyrobbrt'
+                        name = 'Matyrobbrt'
+                        email = 'matyrobbrt@gmail.com'
+                    }
+                }
+                scm {
+                    connection = 'scm:git:git:github.com/matyrobbrt/curseforgejavaapi.git'
+                    developerConnection = 'scm:git:ssh://github.com/Matyrobbrt/SectionProtection.git'
+                    url = 'https://github.com/Matyrobbrt/SectionProtection'
+                }
+            }
         }
     }
     repositories {
         maven {
-            url "file://${project.projectDir}/mcmodsrepo"
+            name = "OSSRH"
+            url = project.hasProperty("snapshot") ?
+                    "https://s01.oss.sonatype.org/content/repositories/snapshots/"
+                    : "https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/"
+            credentials {
+                username = findProperty("ossrhUser") ? ossrhUser : ""
+                password = findProperty("ossrhPassword") ? ossrhPassword : ""
+            }
         }
     }
+}
+nexusStaging {
+    serverUrl = "https://s01.oss.sonatype.org/service/local/"
+    username = findProperty("ossrhUser") ? ossrhUser : ""
+    password = findProperty("ossrhPassword") ? ossrhPassword : ""
+}
+signing {
+    sign publishing.publications.maven
+}
+if (project.hasProperty("close")) {
+    tasks.publish.finalizedBy closeAndReleaseRepository
+}
+
+tasks.register('publishCurseForge', TaskPublishCurseForge) {
+    it.apiToken = findProperty('curseforgeKey')
+
+    var projectId = findProperty('curseforge_project')
+    var mainFile = it.upload(projectId, jar)
+    mainFile.changelog = file('changelog.txt')
+    mainFile.releaseType = findProperty('release_type')
 }
 
 tasks.withType(JavaCompile).configureEach {

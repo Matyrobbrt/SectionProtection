@@ -3,7 +3,7 @@ package com.matyrobbrt.sectionprotection.util;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.matyrobbrt.sectionprotection.SectionProtection;
-import com.matyrobbrt.sectionprotection.api.Banner;
+import com.matyrobbrt.sectionprotection.api.banner.Banner;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.network.chat.MutableComponent;

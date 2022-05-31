@@ -8,11 +8,13 @@ import java.util.Objects;
 import java.util.UUID;
 
 import javax.annotation.Nullable;
+import javax.annotation.ParametersAreNonnullByDefault;
 
 import com.google.common.collect.Lists;
 import com.matyrobbrt.sectionprotection.SectionProtection;
-import com.matyrobbrt.sectionprotection.api.Banner;
+import com.matyrobbrt.sectionprotection.api.banner.Banner;
 
+import com.matyrobbrt.sectionprotection.api.banner.BannerManager;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtUtils;
@@ -22,7 +24,8 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.saveddata.SavedData;
 import org.jetbrains.annotations.NotNull;
 
-public class Banners extends SavedData {
+@ParametersAreNonnullByDefault
+public class Banners extends SavedData implements BannerManager {
 
     /**
      * This represents the current version of the SavedData, allowing us to convert data between
@@ -41,10 +44,12 @@ public class Banners extends SavedData {
     }
 
     @Nullable
+    @Override
     public List<UUID> getMembers(Banner banner) {
         return banners.get(banner);
     }
 
+    @Override
     public void createTeam(Banner banner, UUID owner) {
         banners.put(banner, Lists.newArrayList(owner));
         setDirty(true);

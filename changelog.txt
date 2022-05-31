@@ -1,0 +1,2 @@
+- Allow mods to declare dynamic predicates for break, interaction and place events
+- Expose an API in a different sourceset, and on Maven Central
