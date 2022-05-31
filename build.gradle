@@ -149,37 +149,59 @@ def manifestAttributes = [
     "MixinConfigs"            : "${modid}.mixins.json"
 ] as Map
 
+def forgeDest = project.file("$buildDir/libs/forge")
+
 jar {
     from sourceSets.api.output
     manifest.attributes(manifestAttributes);
-}
-
-tasks.register('api', Jar) {
-    it.from sourceSets.api.output
-    final var attr = new HashMap<>(manifestAttributes);
-    attr.remove('MixinConfigs')
-    it.manifest.attributes(attr)
-    it.archiveClassifier.set('api')
-}
-
-tasks.register('apiSources', Jar) {
-    it.from sourceSets.api.allSource
-    final var attr = new HashMap<>(manifestAttributes);
-    attr.remove('MixinConfigs')
-    it.manifest.attributes(attr)
-    it.archiveClassifier.set('api-sources')
+    destinationDir forgeDest
 }
 
 jar.finalizedBy('reobfJar')
 
 task sourcesJar(type: Jar, dependsOn: classes) {
-    classifier = 'sources'
+    archiveClassifier.set('sources')
     from sourceSets.main.allSource
+    destinationDir forgeDest
 }
 
 task javadocJar(type: Jar, dependsOn: javadoc) {
-    classifier = 'javadoc'
+    archiveClassifier.set('javadoc')
     from javadoc.destinationDir
+    destinationDir forgeDest
+}
+
+def apiDest = project.file("$buildDir/libs/api")
+
+task apiJar(type: Jar, dependsOn: apiClasses) {
+    it.from sourceSets.api.output
+    final var attr = new HashMap<>(manifestAttributes);
+    attr.remove('MixinConfigs')
+    it.manifest.attributes(attr)
+    destinationDirectory.set(apiDest)
+}
+
+reobf {
+    apiJar {}
+}
+apiJar.finalizedBy 'reobfApiJar'
+
+task apiSourcesJar(type: Jar, dependsOn: apiClasses) {
+    archiveClassifier.set('sources')
+    from sourceSets.api.allSource
+    destinationDirectory.set(apiDest)
+}
+
+task apiJavadoc(type: Javadoc) {
+    source = sourceSets.api.allJava
+    classpath = javadoc.classpath
+    destinationDir buildDir.toPath().resolve('api-javadoc').toFile()
+}
+
+task apiJavadocJar(type: Jar, dependsOn: apiJavadoc) {
+    archiveClassifier.set('javadoc')
+    from apiJavadoc.destinationDir
+    destinationDirectory.set(apiDest)
 }
 
 publishing {
@@ -188,30 +210,19 @@ publishing {
             groupId = 'com.matyrobbrt.mc.sectionprotection'
             artifactId = "${modid}-${mcVersion}"
 
-            artifacts = [jar, javadocJar, sourcesJar, api, apiSources]
+            artifacts = [jar, javadocJar, sourcesJar]
 
+            pom(this::configurePom)
+        }
+        mavenApi(MavenPublication) {
+            groupId = 'com.matyrobbrt.mc.sectionprotection'
+            artifactId = "${modid}-${mcVersion}-api"
+
+            artifacts = [apiJar, apiSourcesJar, apiJavadocJar]
+
+            pom(this::configurePom)
             pom {
-                name = "SectionProtection"
-                description = "A Minecraft vanilla-styled chunk claiming mod."
-                url = 'https://github.com/Matyrobbrt/SectionProtection'
-                licenses {
-                    license {
-                        name = 'MIT License'
-                        url = 'https://www.opensource.org/licenses/mit-license.php'
-                    }
-                }
-                developers {
-                    developer {
-                        id = 'matyrobbrt'
-                        name = 'Matyrobbrt'
-                        email = 'matyrobbrt@gmail.com'
-                    }
-                }
-                scm {
-                    connection = 'scm:git:git:github.com/matyrobbrt/curseforgejavaapi.git'
-                    developerConnection = 'scm:git:ssh://github.com/Matyrobbrt/SectionProtection.git'
-                    url = 'https://github.com/Matyrobbrt/SectionProtection'
-                }
+                name = 'SectionProtectionAPI'
             }
         }
     }
@@ -228,6 +239,31 @@ publishing {
         }
     }
 }
+
+void configurePom(MavenPom pom) {
+    pom.name = "SectionProtection"
+    pom.description = "A Minecraft vanilla-styled chunk claiming mod."
+    pom.url = 'https://github.com/Matyrobbrt/SectionProtection'
+    pom.licenses {
+        license {
+            name = 'MIT License'
+            url = 'https://www.opensource.org/licenses/mit-license.php'
+        }
+    }
+    pom.developers {
+        developer {
+            id = 'matyrobbrt'
+            name = 'Matyrobbrt'
+            email = 'matyrobbrt@gmail.com'
+        }
+    }
+    pom.scm {
+        connection = 'scm:git:git:github.com/matyrobbrt/curseforgejavaapi.git'
+        developerConnection = 'scm:git:ssh://github.com/Matyrobbrt/SectionProtection.git'
+        url = 'https://github.com/Matyrobbrt/SectionProtection'
+    }
+}
+
 nexusStaging {
     serverUrl = "https://s01.oss.sonatype.org/service/local/"
     username = findProperty("ossrhUser") ? ossrhUser : ""
@@ -235,9 +271,11 @@ nexusStaging {
 }
 signing {
     sign publishing.publications.maven
+    sign publishing.publications.mavenApi
 }
+
 if (project.hasProperty("close")) {
-    tasks.publish.finalizedBy closeAndReleaseRepository
+    // tasks.publish.finalizedBy closeAndReleaseRepository
 }
 
 tasks.register('publishCurseForge', TaskPublishCurseForge) {

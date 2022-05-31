@@ -122,9 +122,10 @@ public class MixinHooks {
             final var toClaim = ServerConfig.getChunksToClaim(chunk).toList();
             final var claimedData = ClaimedChunks.get(pLevel);
             for (final var subPos : toClaim) {
-                if (!SectionProtection.canClaimChunk(pPlayer, subPos))
+                if (!SectionProtection.canClaimChunk(pPlayer, subPos)) {
+                    pPlayer.containerMenu.sendAllDataToRemote();
                     return;
-                else if (ServerConfig.ONLY_FULL_CLAIM.get() && claimedData.isOwned(subPos)) {
+                } else if (ServerConfig.ONLY_FULL_CLAIM.get() && claimedData.isOwned(subPos)) {
                     pPlayer.displayClientMessage(new TextComponent("The chunk at ")
                             .append(new TextComponent(subPos.getMiddleBlockPosition(64).toShortString()).withStyle(ChatFormatting.BLUE))
                             .append(" is claimed already!").withStyle(ChatFormatting.RED), true);
@@ -148,7 +149,10 @@ public class MixinHooks {
                     final var team = banners.getMembers(pattern);
                     if (team != null) {
                         if (team.contains(pPlayer.getUUID())) {
-                            toClaim.forEach(c -> claimedData.setOwner(c, pattern, pPos));
+                            toClaim.forEach(c -> {
+                                if (!claimedData.isOwned(c))
+                                    claimedData.setOwner(c, pattern, pPos);
+                            });
                             extensionBanner.setProtectionBanner(true);
                             if (!pPlayer.isCreative() && ServerConfig.CONSUME_CONVERSION_ITEM.get()) {
                                 stack.shrink(1);
@@ -158,7 +162,10 @@ public class MixinHooks {
                         }
                     } else {
                         banners.createTeam(pattern, pPlayer.getUUID());
-                        toClaim.forEach(c -> claimedData.setOwner(c, pattern, pPos));
+                        toClaim.forEach(c -> {
+                            if (!claimedData.isOwned(c))
+                                claimedData.setOwner(c, pattern, pPos);
+                        });
                         extensionBanner.setProtectionBanner(true);
                         if (!pPlayer.isCreative() && ServerConfig.CONSUME_CONVERSION_ITEM.get()) {
                             stack.shrink(1);

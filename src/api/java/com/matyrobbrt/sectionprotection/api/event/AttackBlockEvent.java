@@ -10,7 +10,7 @@ import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.Cancelable;
 
 /**
- * This event is fired on the {@link net.minecraftforge.common.MinecraftForge.EVENT_BUS} before
+ * This event is fired on the Forge Event Bus before
  * {@link net.minecraft.world.level.block.state.BlockState#attack(Level, BlockPos, Player)} is called.
  */
 @Cancelable
