@@ -1,3 +1,1 @@
-- Allow mods to declare dynamic predicates for break, interaction and place events
-- Expose an API in a different sourceset, and on Maven Central
-- Fail interactions with banners when converting so that they don't repeat
+- Fix placing old banners not checking the only_full_claims config option

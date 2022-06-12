@@ -61,8 +61,7 @@ public class MixinHooks {
                         pContext.getPlayer().containerMenu.sendAllDataToRemote();
                     }
                     return;
-                }
-                if (data.isOwned(sub)) {
+                } else if (ServerConfig.ONLY_FULL_CLAIM.get() && data.isOwned(sub)) {
                     cir.setReturnValue(InteractionResult.FAIL);
                     if (pContext.getPlayer() != null) {
                         pContext.getPlayer().displayClientMessage(new TextComponent("The chunk at ")
