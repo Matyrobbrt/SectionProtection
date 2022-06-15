@@ -1,1 +1,1 @@
-- Fix placing old banners not checking the only_full_claims config option
+- Fix crash when trying to explode something on the client

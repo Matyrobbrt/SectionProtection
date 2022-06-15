@@ -25,6 +25,8 @@ public abstract class MixinExplosion {
         if (!this.level.isInWorldBounds(pPos)) {
             return false;
         }
+        if (this.level.isClientSide())
+            return !this.level.isInWorldBounds(pPos);
         final var chunk = new ChunkPos(pPos);
         if (ServerConfig.DEFAULT_EXPLOSION_PROTECTED.get().contains(chunk)) {
             return false;
