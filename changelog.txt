@@ -1,1 +1,1 @@
-- Fix crash when trying to explode something on the client
+- Increase the amount of allowed players / page

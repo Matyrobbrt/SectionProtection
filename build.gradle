@@ -286,6 +286,7 @@ tasks.register('publishCurseForge', TaskPublishCurseForge) {
     var mainFile = it.upload(projectId, jar)
     mainFile.changelog = file('changelog.txt')
     mainFile.releaseType = findProperty('release_type')
+    dependsOn(jar)
 }
 
 tasks.withType(JavaCompile).configureEach {

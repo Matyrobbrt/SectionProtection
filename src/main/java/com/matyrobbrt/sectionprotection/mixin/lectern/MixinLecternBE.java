@@ -185,7 +185,7 @@ public abstract class MixinLecternBE extends BlockEntity implements LecternExten
         final var newTeam = banners.getMembers(manager.getOwner(chunk).banner());
         final var newBook = new ItemStack(pStack.getItem());
         final var newList = new ListTag();
-        Lists.partition(newTeam, 6).forEach(sub -> {
+        Lists.partition(newTeam, 12).forEach(sub -> {
             var str = "";
             for (int i = 0; i < sub.size(); i++) {
                 final var uuid = sub.get(i);
