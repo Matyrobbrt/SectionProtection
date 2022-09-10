@@ -1,19 +1,16 @@
 package com.matyrobbrt.sectionprotection.commands;
 
-import static net.minecraft.commands.Commands.argument;
-import static net.minecraft.commands.Commands.literal;
-import static net.minecraft.commands.arguments.coordinates.BlockPosArgument.ERROR_NOT_LOADED;
-import static net.minecraft.commands.arguments.coordinates.BlockPosArgument.ERROR_OUT_OF_WORLD;
-import com.matyrobbrt.sectionprotection.api.extensions.BannerExtension;
-import com.matyrobbrt.sectionprotection.util.FakePlayerHolder;
 import com.matyrobbrt.sectionprotection.SPTags;
 import com.matyrobbrt.sectionprotection.SectionProtection;
-import com.matyrobbrt.sectionprotection.util.ServerConfig;
+import com.matyrobbrt.sectionprotection.api.extensions.BannerExtension;
 import com.matyrobbrt.sectionprotection.util.Constants;
+import com.matyrobbrt.sectionprotection.util.FakePlayerHolder;
+import com.matyrobbrt.sectionprotection.util.ServerConfig;
 import com.matyrobbrt.sectionprotection.util.Utils;
 import com.matyrobbrt.sectionprotection.world.Banners;
 import com.matyrobbrt.sectionprotection.world.ClaimedChunks;
 import com.mojang.brigadier.Command;
+import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.minecraft.ChatFormatting;
@@ -39,6 +36,11 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import static net.minecraft.commands.Commands.argument;
+import static net.minecraft.commands.Commands.literal;
+import static net.minecraft.commands.arguments.coordinates.BlockPosArgument.ERROR_NOT_LOADED;
+import static net.minecraft.commands.arguments.coordinates.BlockPosArgument.ERROR_OUT_OF_WORLD;
+
 @SuppressWarnings("Duplicates")
 public class SPCommands {
 
@@ -61,8 +63,8 @@ public class SPCommands {
                             .executes(ctx -> unclaim(ctx, new BlockPos(ctx.getSource().getPosition()), false))
                             .then(argument("pos", BlockPosArgument.blockPos())
                                     .executes(ctx -> unclaim(ctx, ctx.getArgument("pos", Coordinates.class).getBlockPos(ctx.getSource()), false))
-                                    .then(argument("remove_banner", new BooleanArgument())
-                                            .executes(ctx -> unclaim(ctx, ctx.getArgument("pos", Coordinates.class).getBlockPos(ctx.getSource()), ctx.getArgument("remove_banner", Boolean.class))))))
+                                    .then(argument("remove_banner", BoolArgumentType.bool())
+                                            .executes(ctx -> unclaim(ctx, ctx.getArgument("pos", Coordinates.class).getBlockPos(ctx.getSource()), BoolArgumentType.getBool(ctx, "remove_banner"))))))
                     .then(literal("banner_pos")
                             .executes(ctx -> bannerPos(ctx, new BlockPos(ctx.getSource().getPosition())))
                             .then(argument("pos", BlockPosArgument.blockPos())

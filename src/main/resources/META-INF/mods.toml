@@ -18,7 +18,7 @@ A vanilla-style chunk protection mod
 [[dependencies.${modid}]] #optional
     modId="forge" #mandatory
     mandatory=true #mandatory
-    versionRange="[40,)" #mandatory
+    versionRange="[${forge},)" #mandatory
     ordering="NONE"
     side="SERVER"
 [[dependencies.${modid}]]

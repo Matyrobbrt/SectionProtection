@@ -1,16 +1,27 @@
 package com.matyrobbrt.sectionprotection;
 
 import com.matyrobbrt.sectionprotection.api.SectionProtectionAPI;
+import com.matyrobbrt.sectionprotection.api.event.ChunkDataChangeEvent;
+import com.matyrobbrt.sectionprotection.api.event.TeamChangeEvent;
 import com.matyrobbrt.sectionprotection.client.SPClient;
 import com.matyrobbrt.sectionprotection.commands.SPCommands;
+import com.matyrobbrt.sectionprotection.network.SPFeatures;
+import com.matyrobbrt.sectionprotection.network.SPNetwork;
+import com.matyrobbrt.sectionprotection.network.packet.SyncChunkPacket;
+import com.matyrobbrt.sectionprotection.network.packet.SyncChunksPacket;
+import com.matyrobbrt.sectionprotection.network.packet.SyncTeamPacket;
 import com.matyrobbrt.sectionprotection.recipe.RecipeEnabledCondition;
 import com.matyrobbrt.sectionprotection.util.Constants;
 import com.matyrobbrt.sectionprotection.util.SPVersion;
 import com.matyrobbrt.sectionprotection.util.ServerConfig;
 import com.matyrobbrt.sectionprotection.util.Utils;
+import com.matyrobbrt.sectionprotection.world.Banners;
+import com.matyrobbrt.sectionprotection.world.ClaimedChunks;
 import com.mojang.logging.LogUtils;
+import cpw.mods.modlauncher.api.LamdbaExceptionUtils;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.TextComponent;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -21,15 +32,19 @@ import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.crafting.CraftingHelper;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.event.entity.item.ItemTossEvent;
+import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.server.ServerStartedEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.IExtensionPoint;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
+import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.fml.loading.FMLLoader;
 import net.minecraftforge.network.NetworkConstants;
+import net.minecraftforge.network.NetworkDirection;
+import net.minecraftforge.server.ServerLifecycleHooks;
 import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
@@ -53,7 +68,7 @@ public class SectionProtection {
 
         bus.register(ServerConfig.class);
         bus.addGenericListener(RecipeSerializer.class, (final RegistryEvent.Register<RecipeSerializer<?>> event) -> CraftingHelper.register(new RecipeEnabledCondition.Serializer()));
-        // bus.addListener((final FMLCommonSetupEvent event) -> SPNetwork.register());
+        bus.addListener((final FMLCommonSetupEvent event) -> SPNetwork.register());
 
         MinecraftForge.EVENT_BUS.addListener(SPCommands::register);
         MinecraftForge.EVENT_BUS.register(SectionProtection.class);
@@ -62,6 +77,49 @@ public class SectionProtection {
         if (FMLLoader.getDist() == Dist.CLIENT) {
             new SPClient(bus);
         }
+    }
+
+    @SubscribeEvent
+    static void onPlayerLogin(final PlayerEvent.PlayerLoggedInEvent event) {
+        if (event.getPlayer() instanceof ServerPlayer player) {
+            if (SPNetwork.isPresent(player, SPNetwork.CHUNK_SYNC_CHANNEL) && SPFeatures.CLAIM_SYNC.clientCanReceive(player)) {
+                final var ch = SPNetwork.getChannel(SPFeatures.CLAIM_SYNC);
+                ServerLifecycleHooks.getCurrentServer().getAllLevels()
+                        .forEach(level -> ch.sendTo(new SyncChunksPacket(level.dimension(), ClaimedChunks.get(level).getChunks()),
+                                player.connection.getConnection(), NetworkDirection.PLAY_TO_CLIENT));
+            }
+            if (SPNetwork.isPresent(player, SPNetwork.TEAM_SYNC_CHANNEL) && SPFeatures.TEAM_SYNC.clientCanReceive(player)) {
+                final var ch = SPNetwork.getChannel(SPFeatures.TEAM_SYNC);
+                Banners.get(ServerLifecycleHooks.getCurrentServer())
+                        .getBanners().forEach((banner, members) -> ch.sendTo(
+                                new SyncTeamPacket(banner, members),
+                                player.connection.getConnection(),
+                                NetworkDirection.PLAY_TO_CLIENT
+                        ));
+            }
+        }
+    }
+
+    @SubscribeEvent
+    static void onChunkChangeData(final ChunkDataChangeEvent.Server event) {
+        ServerLifecycleHooks.getCurrentServer().getPlayerList().getPlayers().forEach(player -> {
+            if (SPNetwork.isPresent(player, SPNetwork.CHUNK_SYNC_CHANNEL)) {
+                SPFeatures.CLAIM_SYNC.sendToClient(new SyncChunkPacket(
+                        event.dimension, event.pos, event.newData
+                ), player);
+            }
+        });
+    }
+
+    @SubscribeEvent
+    static void onTeamChange(final TeamChangeEvent.Server event) {
+        ServerLifecycleHooks.getCurrentServer().getPlayerList().getPlayers().forEach(player -> {
+            if (SPNetwork.isPresent(player, SPNetwork.TEAM_SYNC_CHANNEL)) {
+                SPFeatures.TEAM_SYNC.sendToClient(new SyncTeamPacket(
+                        event.getBanner(), event.getMembers()
+                ), player);
+            }
+        });
     }
 
     @SubscribeEvent
@@ -79,12 +137,13 @@ public class SectionProtection {
         }
     }
 
-    @SuppressWarnings("all")
     public static boolean isConversionItem(ItemStack stack) {
+        //noinspection ConstantConditions
         return stack.is(SPTags.IS_CONVERSION_ITEM) || ServerConfig.CONVERSION_ITEMS.get()
             .stream().anyMatch(s -> stack.getItem().getRegistryName().toString().equals(s));
     }
 
+    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     public static boolean canClaimChunk(@Nullable Player player, ChunkPos chunk) {
         final var canClaim = !ServerConfig.UNCLAIMABLE_CHUNKS.get().contains(chunk);
         if (!canClaim && player != null)
@@ -96,8 +155,10 @@ public class SectionProtection {
     }
 
     static {
+        //noinspection resource
         var resource = SectionProtection.class.getResourceAsStream("/META-INF/MANIFEST.MF");
         if (resource == null) {
+            //noinspection resource
             resource = SectionProtection.class.getResourceAsStream("META-INF/MANIFEST.MF");
         }
         if (resource == null) {
@@ -105,6 +166,7 @@ public class SectionProtection {
         } else {
             final var finalResource = resource;
             VERSION = Utils.getOrNull(() -> SPVersion.from(new Manifest(finalResource)));
+            LamdbaExceptionUtils.uncheck(finalResource::close);
         }
     }
 }

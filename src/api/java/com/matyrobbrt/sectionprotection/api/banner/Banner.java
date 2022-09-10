@@ -109,11 +109,11 @@ public record Banner(List<Data> data) {
 
         public void encode(FriendlyByteBuf buf) {
             buf.writeInt(color.getId());
-            buf.writeUtf(pattern.getHashname(), 5);
+            buf.writeUtf(pattern.getHashname());
         }
 
         public static Data decode(FriendlyByteBuf buf) {
-            return new Data(buf.readInt(), buf.readUtf(5));
+            return new Data(buf.readInt(), buf.readUtf());
         }
     }
 

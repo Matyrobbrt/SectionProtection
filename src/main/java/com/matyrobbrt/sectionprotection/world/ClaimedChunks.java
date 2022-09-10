@@ -3,20 +3,23 @@ package com.matyrobbrt.sectionprotection.world;
 import com.matyrobbrt.sectionprotection.SectionProtection;
 import com.matyrobbrt.sectionprotection.api.chunk.ChunkData;
 import com.matyrobbrt.sectionprotection.api.chunk.ChunkManager;
+import com.matyrobbrt.sectionprotection.api.event.ChunkDataChangeEvent;
 import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.saveddata.SavedData;
+import net.minecraftforge.common.MinecraftForge;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
-import java.lang.ref.WeakReference;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -31,8 +34,10 @@ public class ClaimedChunks extends SavedData implements ChunkManager {
     public static final int CURRENT_VERSION = 2;
 
     private final Map<ChunkPos, ChunkData> chunks;
+    private final ResourceKey<Level> dimension;
 
-    private ClaimedChunks() {
+    private ClaimedChunks(ResourceKey<Level> dimension) {
+        this.dimension = dimension;
         this.chunks = new HashMap<>();
     }
 
@@ -56,7 +61,8 @@ public class ClaimedChunks extends SavedData implements ChunkManager {
 
     @Override
     public void setData(ChunkPos pos, ChunkData data) {
-        chunks.put(pos, data);
+        final var old = chunks.put(pos, data);
+        fireEvent(pos, data, old);
         setDirty();
     }
 
@@ -64,11 +70,20 @@ public class ClaimedChunks extends SavedData implements ChunkManager {
     public ChunkData removeData(ChunkPos pos) {
         final var data = chunks.remove(pos);
         setDirty();
+        fireEvent(pos, null, data);
         return data;
     }
 
     public void removeOwner(BlockPos pos) {
         removeData(new ChunkPos(pos));
+    }
+
+    public Map<ChunkPos, ChunkData> getChunks() {
+        return Collections.unmodifiableMap(chunks);
+    }
+
+    private void fireEvent(ChunkPos pos, @Nullable ChunkData newData, @Nullable ChunkData oldData) {
+        MinecraftForge.EVENT_BUS.post(new ChunkDataChangeEvent.Server(dimension, pos, newData, oldData));
     }
 
     @Override
@@ -85,9 +100,10 @@ public class ClaimedChunks extends SavedData implements ChunkManager {
         return pCompoundTag;
     }
 
-    public static ClaimedChunks load(CompoundTag nbt) {
+    public static ClaimedChunks load(ResourceKey<Level> dimension, CompoundTag nbt) {
+        //noinspection unused
         final var version = nbt.getInt("dataVersion");
-        final var chunks = new ClaimedChunks();
+        final var chunks = new ClaimedChunks(dimension);
         nbt.getList("data", Tag.TAG_COMPOUND).forEach(tag -> {
             final var cTag = (CompoundTag) tag;
             chunks.chunks.put(new ChunkPos(cTag.getLong("pos")), ChunkData.deserialize(cTag.get("owner")));
@@ -100,7 +116,7 @@ public class ClaimedChunks extends SavedData implements ChunkManager {
     }
 
     public static ClaimedChunks get(ServerLevel level) {
-        return level.getDataStorage().computeIfAbsent(ClaimedChunks::load, ClaimedChunks::new,
+        return level.getDataStorage().computeIfAbsent(compoundTag -> load(level.dimension(), compoundTag), () -> new ClaimedChunks(level.dimension()),
                 SectionProtection.MOD_ID + "_claimed_chunks");
     }
 

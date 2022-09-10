@@ -17,7 +17,7 @@ import java.util.EnumMap;
 import java.util.Map;
 import java.util.Objects;
 
-@Deprecated(since = "Not currently implemented")
+//@Deprecated(since = "Not currently implemented")
 public class SPNetwork {
 
     public static final ResourceLocation EXISTENCE_CHANNEL_NAME = new ResourceLocation(SectionProtection.MOD_ID, "exists");
@@ -27,6 +27,9 @@ public class SPNetwork {
             .clientAcceptedVersions(str -> true)
             .serverAcceptedVersions(str -> true)
             .eventNetworkChannel();
+
+    public static final ResourceLocation CHUNK_SYNC_CHANNEL = new ResourceLocation(SectionProtection.MOD_ID, "enable_chunk_sync");
+    public static final ResourceLocation TEAM_SYNC_CHANNEL = new ResourceLocation(SectionProtection.MOD_ID, "enable_team_sync");
 
     private static final Map<SPFeatures, SimpleChannel> FEATURE_CHANNELS = new EnumMap<>(SPFeatures.class);
 
@@ -41,7 +44,7 @@ public class SPNetwork {
                     .simpleChannel();
 
             for (final var pkt : feature.getPackets()) {
-                // SPPacket.register(channel, index++, pkt);
+                 SPPacket.registerUnsafe(channel, index++, pkt.clazz(), pkt.decoder(), pkt.direction());
             }
 
             FEATURE_CHANNELS.put(feature, channel);
@@ -59,6 +62,12 @@ public class SPNetwork {
 
     public static boolean isModPresent(Connection connection) {
         return EXISTENCE_CHANNEL.isRemotePresent(connection);
+    }
+
+    public static boolean isPresent(ServerPlayer client, ResourceLocation name) {
+        final var data = NetworkHooks.getConnectionData(client.connection.connection);
+        if (data == null) return false;
+        return data.getChannels().containsKey(name);
     }
 
     public static ArtifactVersion getFeatureVersion(Connection connection, SPFeatures feature) {

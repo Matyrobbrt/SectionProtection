@@ -98,7 +98,10 @@ sourceSets.main.resources { srcDir 'src/generated/resources' }
 
 repositories {
     maven { url 'https://cursemaven.com' }
+    maven { url 'https://jm.gserv.me/repository/maven-snapshots/' }
     mavenCentral()
+    //noinspection JCenterRepository
+    jcenter()
 }
 
 dependencies {
@@ -110,17 +113,23 @@ dependencies {
 //    runtimeOnly fg.deobf("curse.maven:flywheel-486392:3737402")
 //    runtimeOnly fg.deobf("curse.maven:create-328085:3737418")
 
-    compileOnly fg.deobf("curse.maven:journeymap-32274:3796379")
+    compileOnly 'info.journeymap:journeymap-api:1.18.2-1.9-SNAPSHOT'
+    runtimeOnly fg.deobf('curse.maven:journeymap-32274:3796379')
 
     annotationProcessor 'org.spongepowered:mixin:0.8.4:processor'
 
     compileOnly group:'com.google.auto.service', name:'auto-service', version:'1.0.1'
     annotationProcessor group:'com.google.auto.service', name:'auto-service', version:'1.0.1'
+
+    def vcollections = '0.3.3'
+    minecraftLibrary "eu.mihosoft.vcollections:vcollections:$vcollections"
+    jarJar "eu.mihosoft.vcollections:vcollections:[$vcollections,)"
 }
 
 final var expands = [
     'version': project.version,
-    'modid': modid
+    'modid': modid,
+    'forge': project.forge_version
 ]
 
 // This block of code expands all the gradle properties in the specified resource targets.
@@ -151,10 +160,19 @@ def manifestAttributes = [
 
 def forgeDest = project.file("$buildDir/libs/forge")
 
+tasks.named('jarJar') {
+    from sourceSets.api.output
+    manifest.attributes(manifestAttributes)
+    destinationDir forgeDest
+    enabled = true
+    classifier = ''
+}
+
 jar {
     from sourceSets.api.output
-    manifest.attributes(manifestAttributes);
+    manifest.attributes(manifestAttributes)
     destinationDir forgeDest
+    classifier = 'slim'
 }
 
 jar.finalizedBy('reobfJar')
@@ -183,8 +201,10 @@ task apiJar(type: Jar, dependsOn: apiClasses) {
 
 reobf {
     apiJar {}
+    jarJar {}
 }
 apiJar.finalizedBy 'reobfApiJar'
+tasks.jarJar.finalizedBy 'reobfJarJar'
 
 task apiSourcesJar(type: Jar, dependsOn: apiClasses) {
     archiveClassifier.set('sources')
@@ -210,7 +230,7 @@ publishing {
             groupId = 'com.matyrobbrt.mc.sectionprotection'
             artifactId = "${modid}-${mcVersion}"
 
-            artifacts = [jar, javadocJar, sourcesJar]
+            artifacts = [tasks.jarJar, javadocJar, sourcesJar]
 
             pom(this::configurePom)
         }
@@ -283,7 +303,7 @@ tasks.register('publishCurseForge', TaskPublishCurseForge) {
     it.group = 'publishing'
 
     var projectId = findProperty('curseforge_project')
-    var mainFile = it.upload(projectId, jar)
+    var mainFile = it.upload(projectId, tasks.jarJar)
     mainFile.changelog = file('changelog.txt')
     mainFile.releaseType = findProperty('release_type')
     dependsOn(jar)

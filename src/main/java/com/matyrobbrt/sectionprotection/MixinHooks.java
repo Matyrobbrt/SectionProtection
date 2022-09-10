@@ -114,9 +114,11 @@ public class MixinHooks {
     }
 
     public static final class BannerStuff {
-        public static void use(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, InteractionHand pHand, BlockHitResult pHit, CallbackInfoReturnable<InteractionResult> cir) {
+        public static void use(Level pLevel, BlockPos pPos, Player pPlayer, InteractionHand pHand, BlockHitResult pHit, CallbackInfoReturnable<InteractionResult> cir) {
             if (pLevel.isClientSide() || pPlayer instanceof FakePlayer)
                 return;
+            final var stack = pPlayer.getItemInHand(pHand);
+            if (!SectionProtection.isConversionItem(stack)) return;
             final var chunk = new ChunkPos(pPos);
             final var toClaim = ServerConfig.getChunksToClaim(chunk).toList();
             final var claimedData = ClaimedChunks.get(pLevel);
@@ -125,7 +127,7 @@ public class MixinHooks {
                     pPlayer.containerMenu.sendAllDataToRemote();
                     cir.setReturnValue(InteractionResult.FAIL);
                     return;
-                } else if (ServerConfig.ONLY_FULL_CLAIM.get() && claimedData.isOwned(subPos)) {
+                } else if ((ServerConfig.ONLY_FULL_CLAIM.get() || subPos.equals(chunk)) && claimedData.isOwned(subPos)) {
                     pPlayer.displayClientMessage(new TextComponent("The chunk at ")
                             .append(new TextComponent(subPos.getMiddleBlockPosition(64).toShortString()).withStyle(ChatFormatting.BLUE))
                             .append(" is claimed already!").withStyle(ChatFormatting.RED), true);
@@ -136,16 +138,12 @@ public class MixinHooks {
             }
             pLevel.getBlockEntity(pPos, BlockEntityType.BANNER).ifPresent(banner -> {
                 final var extensionBanner = ((BannerExtension) banner);
-                final var stack = pPlayer.getItemInHand(pHand);
                 final var pattern = Banner.from(banner.getPatterns());
                 if (pattern.equals(Constants.OMINOUS)) {
                     pPlayer.sendMessage(new TextComponent("Sorry, but Ominous Banners cannot be converted into Protection Banners."), Util.NIL_UUID);
                     return;
                 }
-                if (
-                    !extensionBanner.isProtectionBanner() &&
-                    SectionProtection.isConversionItem(stack)
-                ) {
+                if (!extensionBanner.isProtectionBanner()) {
                     final var banners = Banners.get(Objects.requireNonNull(pLevel.getServer()));
                     final var team = banners.getMembers(pattern);
                     if (team != null) {
@@ -158,7 +156,7 @@ public class MixinHooks {
                             if (!pPlayer.isCreative() && ServerConfig.CONSUME_CONVERSION_ITEM.get()) {
                                 stack.shrink(1);
                             }
-                            cir.setReturnValue(InteractionResult.CONSUME);
+                            cir.setReturnValue(InteractionResult.PASS);
                             pPlayer.displayClientMessage(new TextComponent("The Banner has been converted to a Protection Banner"), true);
                         }
                     } else {
@@ -172,7 +170,7 @@ public class MixinHooks {
                             stack.shrink(1);
                         }
                         pPlayer.sendMessage(new TextComponent("Created new team!").withStyle(ChatFormatting.GRAY), Util.NIL_UUID);
-                        cir.setReturnValue(InteractionResult.CONSUME);
+                        cir.setReturnValue(InteractionResult.PASS);
                         pPlayer.displayClientMessage(new TextComponent("The Banner has been converted to a Protection Banner"), true);
                     }
                 }

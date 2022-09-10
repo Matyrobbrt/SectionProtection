@@ -1,20 +1,11 @@
 package com.matyrobbrt.sectionprotection.world;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.UUID;
-
-import javax.annotation.Nullable;
-import javax.annotation.ParametersAreNonnullByDefault;
-
 import com.google.common.collect.Lists;
 import com.matyrobbrt.sectionprotection.SectionProtection;
 import com.matyrobbrt.sectionprotection.api.banner.Banner;
-
 import com.matyrobbrt.sectionprotection.api.banner.BannerManager;
+import com.matyrobbrt.sectionprotection.api.event.TeamChangeEvent;
+import eu.mihosoft.vcollections.VList;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtUtils;
@@ -22,7 +13,17 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.saveddata.SavedData;
+import net.minecraftforge.common.MinecraftForge;
 import org.jetbrains.annotations.NotNull;
+
+import javax.annotation.Nullable;
+import javax.annotation.ParametersAreNonnullByDefault;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.UUID;
 
 @ParametersAreNonnullByDefault
 public class Banners extends SavedData implements BannerManager {
@@ -51,7 +52,7 @@ public class Banners extends SavedData implements BannerManager {
 
     @Override
     public void createTeam(Banner banner, UUID owner) {
-        banners.put(banner, Lists.newArrayList(owner));
+        banners.put(banner, observe(banner, Lists.newArrayList(owner)));
         setDirty(true);
     }
 
@@ -78,9 +79,15 @@ public class Banners extends SavedData implements BannerManager {
             final var ids = new ArrayList<>(
                 cTag.getList("members", Tag.TAG_INT_ARRAY).stream().map(NbtUtils::loadUUID).toList());
             final var banner = new Banner(cTag.getList("banner", Tag.TAG_COMPOUND));
-            banners.banners.put(banner, ids);
+            banners.banners.put(banner, observe(banner, ids));
         });
         return banners;
+    }
+
+    private static List<UUID> observe(Banner teamBanner, List<UUID> list) {
+        final var vList = VList.newInstance(list);
+        vList.addChangeListener(evt -> MinecraftForge.EVENT_BUS.post(new TeamChangeEvent.Server(teamBanner, List.copyOf(list))));
+        return vList;
     }
 
     public static Banners get(MinecraftServer server) {

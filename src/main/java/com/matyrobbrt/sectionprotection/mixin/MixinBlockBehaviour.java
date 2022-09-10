@@ -41,7 +41,7 @@ public abstract class MixinBlockBehaviour {
     @SuppressWarnings("ALL")
     private void sectionprotection$use(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, InteractionHand pHand, BlockHitResult pHit, CallbackInfoReturnable<InteractionResult> cir) {
         if (((Object) this) instanceof AbstractBannerBlock bannerBlock) {
-            MixinHooks.BannerStuff.use(pState, pLevel, pPos, pPlayer, pHand, pHit, cir);
+             MixinHooks.BannerStuff.use(pLevel, pPos, pPlayer, pHand, pHit, cir);
         }
     }
 
