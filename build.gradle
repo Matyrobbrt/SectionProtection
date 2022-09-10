@@ -123,6 +123,7 @@ dependencies {
 
     def vcollections = '0.3.3'
     minecraftLibrary "eu.mihosoft.vcollections:vcollections:$vcollections"
+    library "eu.mihosoft.vcollections:vcollections:$vcollections"
     jarJar "eu.mihosoft.vcollections:vcollections:[$vcollections,)"
 }
 
