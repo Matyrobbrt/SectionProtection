@@ -30,15 +30,15 @@ public interface SectionProtectionClientAPI {
 
     /**
      * Call this method during mod constructor to enable the synchronization of claim status.
-     *
-     * @apiNote multiple mods may call this method without issues
+     * <br>
+     * Note: multiple mods may call this method without issues
      */
     void enableClaimSync();
 
     /**
      * Call this method during mod constructor to enable the synchronization of teams.
-     *
-     * @apiNote multiple mods may call this method without issues
+     * <br>
+     * Note: multiple mods may call this method without issues
      */
     void enableTeamSync();
 }
