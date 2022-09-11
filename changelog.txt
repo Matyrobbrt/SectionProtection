@@ -1,1 +1,1 @@
-- Increase the amount of allowed players / page
+- Add JourneyMap compat

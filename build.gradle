@@ -162,12 +162,19 @@ def manifestAttributes = [
 
 def forgeDest = project.file("$buildDir/libs/forge")
 
+import com.github.jengelman.gradle.plugins.shadow.tasks.ConfigureShadowRelocation
+task relocateShadowJar(type: ConfigureShadowRelocation) {
+    target = tasks.shadowJar
+    prefix = "${project.group}.shade"
+}
+
 tasks.named('shadowJar', Jar) {
     from sourceSets.api.output
     manifest.attributes(manifestAttributes)
     destinationDir forgeDest
     classifier = ''
     configurations = [project.configurations.library]
+    dependsOn(relocateShadowJar)
 }
 
 jar {
@@ -308,7 +315,7 @@ tasks.register('publishCurseForge', TaskPublishCurseForge) {
     var mainFile = it.upload(projectId, tasks.shadowJar)
     mainFile.changelog = file('changelog.txt')
     mainFile.releaseType = findProperty('release_type')
-    dependsOn(jar)
+    dependsOn(tasks.shadowJar)
 }
 
 tasks.withType(JavaCompile).configureEach {
