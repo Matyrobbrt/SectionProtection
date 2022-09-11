@@ -132,6 +132,7 @@ public class SPCommands {
         if (removeBanner && data.bannerPos() != null) {
             final var be = context.getSource().getLevel().getBlockEntity(data.bannerPos());
             if (be instanceof BannerExtension ext) {
+                ext.setSectionProtectionIsUnloaded(false);
                 ext.sectionProtectionUnclaim();
             }
             context.getSource().getLevel().destroyBlock(data.bannerPos(), true, context.getSource().getEntity());

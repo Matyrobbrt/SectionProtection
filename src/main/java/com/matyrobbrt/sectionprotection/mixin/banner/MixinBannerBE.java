@@ -1,5 +1,6 @@
 package com.matyrobbrt.sectionprotection.mixin.banner;
 
+import com.matyrobbrt.sectionprotection.MixinHooks;
 import com.matyrobbrt.sectionprotection.util.ServerConfig;
 import com.matyrobbrt.sectionprotection.api.banner.Banner;
 import com.matyrobbrt.sectionprotection.util.Constants;
@@ -76,24 +77,7 @@ public class MixinBannerBE extends BlockEntity implements BannerExtension {
 
     @Override
     public void sectionProtectionUnclaim() {
-        if (
-            // @Volatile: MC calls setRemoved when a chunk unloads now as well (see ServerLevel#unload -> LevelChunk#clearAllBlockEntities).
-            // Since we don't want to remove the claimed status of a chunk (which also makes the server freeze in the case of a save in progress), we need to know if it was removed due to unloading.
-            // We can use "unloaded" for that, it's set in #onChunkUnloaded.
-            // Since MC first calls #onChunkUnloaded and then #setRemoved, this check keeps working.
-            !sectionprotection$unloaded
-            && isProtectionBanner() && level != null && !level.isClientSide()) {
-            final var pattern = Banner.from(((BannerBlockEntity) (Object) this).getPatterns());
-            final var claimData = ClaimedChunks.get(level);
-            ServerConfig.getChunksToClaim(new ChunkPos(getBlockPos()))
-                    .filter(chunk -> {
-                        final var owner = claimData.getOwner(chunk);
-                        if (owner != null) {
-                            return owner.banner().equals(pattern) && (owner.bannerPos() == null || worldPosition.equals(owner.bannerPos()));
-                        }
-                        return false;
-                    })
-                    .forEach(claimData::removeData);
-        }
+        //noinspection ConstantConditions
+        MixinHooks.BannerStuff.unclaim(this, ((BannerBlockEntity) (Object) this));
     }
 }

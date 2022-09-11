@@ -6,6 +6,7 @@ import java.time.format.DateTimeFormatter
 
 plugins {
     id 'net.darkhax.curseforgegradle' version '1.0.10'
+    id 'com.github.johnrengelman.shadow' version '7.1.2'
 }
 
 final var applyPlugins = [
@@ -161,12 +162,12 @@ def manifestAttributes = [
 
 def forgeDest = project.file("$buildDir/libs/forge")
 
-tasks.named('jarJar') {
+tasks.named('shadowJar', Jar) {
     from sourceSets.api.output
     manifest.attributes(manifestAttributes)
     destinationDir forgeDest
-    enabled = true
     classifier = ''
+    configurations = [project.configurations.library]
 }
 
 jar {
@@ -202,10 +203,10 @@ task apiJar(type: Jar, dependsOn: apiClasses) {
 
 reobf {
     apiJar {}
-    jarJar {}
+    shadowJar {}
 }
 apiJar.finalizedBy 'reobfApiJar'
-tasks.jarJar.finalizedBy 'reobfJarJar'
+shadowJar.finalizedBy 'reobfShadowJar'
 
 task apiSourcesJar(type: Jar, dependsOn: apiClasses) {
     archiveClassifier.set('sources')
@@ -231,7 +232,7 @@ publishing {
             groupId = 'com.matyrobbrt.mc.sectionprotection'
             artifactId = "${modid}-${mcVersion}"
 
-            artifacts = [tasks.jarJar, javadocJar, sourcesJar]
+            artifacts = [shadowJar, javadocJar, sourcesJar]
 
             pom(this::configurePom)
         }
@@ -304,7 +305,7 @@ tasks.register('publishCurseForge', TaskPublishCurseForge) {
     it.group = 'publishing'
 
     var projectId = findProperty('curseforge_project')
-    var mainFile = it.upload(projectId, tasks.jarJar)
+    var mainFile = it.upload(projectId, tasks.shadowJar)
     mainFile.changelog = file('changelog.txt')
     mainFile.releaseType = findProperty('release_type')
     dependsOn(jar)

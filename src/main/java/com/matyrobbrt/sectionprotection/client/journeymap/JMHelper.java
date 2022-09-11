@@ -1,5 +1,6 @@
 package com.matyrobbrt.sectionprotection.client.journeymap;
 
+import com.matyrobbrt.sectionprotection.api.banner.Banner;
 import com.matyrobbrt.sectionprotection.util.Constants;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceKey;
@@ -22,14 +23,14 @@ public interface JMHelper {
         return Store.instance;
     }
 
-    void setClaimed(ChunkPos pos, ResourceKey<Level> dim, DyeColor bannerColour, BlockPos bannerPos, boolean isSelfMember);
+    void setClaimed(ChunkPos pos, ResourceKey<Level> dim, DyeColor bannerColour, BlockPos bannerPos, Banner owningTeam, boolean isSelfMember);
     void unclaim(ChunkPos pos, ResourceKey<Level> dim);
     void removeAllMarkers();
 
     class Store {
         static JMHelper instance = new JMHelper() {
             @Override
-            public void setClaimed(ChunkPos pos, ResourceKey<Level> dim, DyeColor bannerColour, BlockPos bannerPos, boolean isSelfMember) {
+            public void setClaimed(ChunkPos pos, ResourceKey<Level> dim, DyeColor bannerColour, BlockPos bannerPos, Banner owningTeam, boolean isSelfMember) {
 
             }
 

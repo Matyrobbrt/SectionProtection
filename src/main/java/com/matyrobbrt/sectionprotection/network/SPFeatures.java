@@ -5,6 +5,7 @@ import com.matyrobbrt.sectionprotection.network.packet.SPPacket;
 import com.matyrobbrt.sectionprotection.network.packet.SyncChunkPacket;
 import com.matyrobbrt.sectionprotection.network.packet.SyncChunksPacket;
 import com.matyrobbrt.sectionprotection.network.packet.SyncTeamPacket;
+import com.matyrobbrt.sectionprotection.network.packet.claiming.UnclaimChunkPacket;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
@@ -24,6 +25,10 @@ public enum SPFeatures {
 
     TEAM_SYNC("team_sync", "1.0.0", new PacketData<>(
             SyncTeamPacket.class, SyncTeamPacket::decode, NetworkDirection.PLAY_TO_CLIENT
+    )),
+
+    CLAIM_PACKETS("claim_packets", "1.0.0", new PacketData<>(
+            UnclaimChunkPacket.class, UnclaimChunkPacket::decode, NetworkDirection.PLAY_TO_SERVER
     ));
 
     private final String featureName;

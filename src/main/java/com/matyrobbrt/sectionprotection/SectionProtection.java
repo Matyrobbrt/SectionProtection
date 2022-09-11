@@ -82,12 +82,7 @@ public class SectionProtection {
     @SubscribeEvent
     static void onPlayerLogin(final PlayerEvent.PlayerLoggedInEvent event) {
         if (event.getPlayer() instanceof ServerPlayer player) {
-            if (SPNetwork.isPresent(player, SPNetwork.CHUNK_SYNC_CHANNEL) && SPFeatures.CLAIM_SYNC.clientCanReceive(player)) {
-                final var ch = SPNetwork.getChannel(SPFeatures.CLAIM_SYNC);
-                ServerLifecycleHooks.getCurrentServer().getAllLevels()
-                        .forEach(level -> ch.sendTo(new SyncChunksPacket(level.dimension(), ClaimedChunks.get(level).getChunks()),
-                                player.connection.getConnection(), NetworkDirection.PLAY_TO_CLIENT));
-            }
+            // Send teams first so the info can be there before chunks
             if (SPNetwork.isPresent(player, SPNetwork.TEAM_SYNC_CHANNEL) && SPFeatures.TEAM_SYNC.clientCanReceive(player)) {
                 final var ch = SPNetwork.getChannel(SPFeatures.TEAM_SYNC);
                 Banners.get(ServerLifecycleHooks.getCurrentServer())
@@ -96,6 +91,13 @@ public class SectionProtection {
                                 player.connection.getConnection(),
                                 NetworkDirection.PLAY_TO_CLIENT
                         ));
+            }
+
+            if (SPNetwork.isPresent(player, SPNetwork.CHUNK_SYNC_CHANNEL) && SPFeatures.CLAIM_SYNC.clientCanReceive(player)) {
+                final var ch = SPNetwork.getChannel(SPFeatures.CLAIM_SYNC);
+                ServerLifecycleHooks.getCurrentServer().getAllLevels()
+                        .forEach(level -> ch.sendTo(new SyncChunksPacket(level.dimension(), ClaimedChunks.get(level).getChunks()),
+                                player.connection.getConnection(), NetworkDirection.PLAY_TO_CLIENT));
             }
         }
     }

@@ -50,6 +50,11 @@ public class Banners extends SavedData implements BannerManager {
         return banners.get(banner);
     }
 
+    public boolean isMember(Banner banner, UUID member) {
+        final var team = getMembers(banner);
+        return team != null && team.contains(member);
+    }
+
     @Override
     public void createTeam(Banner banner, UUID owner) {
         banners.put(banner, observe(banner, Lists.newArrayList(owner)));

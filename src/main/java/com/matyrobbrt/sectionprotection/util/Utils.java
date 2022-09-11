@@ -1,5 +1,7 @@
 package com.matyrobbrt.sectionprotection.util;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import com.google.gson.JsonObject;
 import com.matyrobbrt.sectionprotection.util.function.ExceptionSupplier;
 import com.mojang.authlib.GameProfile;
@@ -21,15 +23,20 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 public class Utils {
 
+    private static final Cache<UUID, String> NAME_CACHE = CacheBuilder.newBuilder()
+            .expireAfterAccess(2, TimeUnit.HOURS)
+            .build();
+
     // TODO maybe also make a request to mojang's servers?
-    public static Optional<String> getOwnerName(MinecraftServer server, List<UUID> team) {
+    public static Optional<String> getOwnerName(@Nullable MinecraftServer server, List<UUID> team) {
         if (team == null || team.size() < 1) {
             return Optional.empty();
         }
-        return server.getProfileCache().get(team.get(0)).map(GameProfile::getName);
+        return getPlayerName(server, team.get(0));
     }
 
     public static Optional<String> getPlayerName(@Nullable MinecraftServer server, @Nonnull UUID id) {
@@ -39,9 +46,23 @@ public class Utils {
                 return maybe;
             }
         }
-        // Now try a query to mojang's servers
+        final var cached = NAME_CACHE.getIfPresent(id);
+        if (cached == null) {
+            // Now try a query to mojang's servers
+            final var mojang = requestPlayerName(id);
+            if (mojang.isPresent()) {
+                NAME_CACHE.put(id, mojang.get());
+                return mojang;
+            } else {
+                return Optional.empty();
+            }
+        }
+        return Optional.of(cached);
+    }
+
+    public static Optional<String> requestPlayerName(UUID uuid) {
         try {
-            final var url = new URL(Constants.REQUEST_NAME_URL + id.toString().replace("-", ""));
+            final var url = new URL(Constants.REQUEST_NAME_URL + uuid.toString().replace("-", ""));
             try (final var reader = new InputStreamReader(url.openStream())) {
                 final var json = Constants.GSON.fromJson(reader, JsonObject.class);
                 return Optional.of(json.get("name").getAsString());

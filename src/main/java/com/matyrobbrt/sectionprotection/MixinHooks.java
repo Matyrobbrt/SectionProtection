@@ -52,7 +52,8 @@ public class MixinHooks {
             final var pattern = new Banner(BannerBlockEntity.getItemPatterns(pContext.getItemInHand()), bannerBlock.getColor());
             final var team = banners.getMembers(pattern);
             final var data = ClaimedChunks.get(pContext.getLevel());
-            final var toClaim = ServerConfig.getChunksToClaim(pos);
+            final var toClaim = ServerConfig.getChunksToClaim(pos).toList();
+            int notClaimableAmount = 0;
             for (final var it = toClaim.iterator(); it.hasNext();) {
                 final var sub = it.next();
                 if (!SectionProtection.canClaimChunk(pContext.getPlayer(), pos)) {
@@ -61,7 +62,7 @@ public class MixinHooks {
                         pContext.getPlayer().containerMenu.sendAllDataToRemote();
                     }
                     return;
-                } else if (ServerConfig.ONLY_FULL_CLAIM.get() && data.isOwned(sub)) {
+                } else if ((ServerConfig.ONLY_FULL_CLAIM.get() || sub.equals(pos)) && data.isOwned(sub)) {
                     cir.setReturnValue(InteractionResult.FAIL);
                     if (pContext.getPlayer() != null) {
                         pContext.getPlayer().displayClientMessage(new TextComponent("The chunk at ")
@@ -70,7 +71,18 @@ public class MixinHooks {
                         pContext.getPlayer().containerMenu.sendAllDataToRemote();
                     }
                     return;
+                } else if (data.isOwned(sub)) {
+                    notClaimableAmount++;
                 }
+            }
+            if (notClaimableAmount == toClaim.size()) {
+                cir.setReturnValue(InteractionResult.FAIL);
+                if (pContext.getPlayer() instanceof ServerPlayer serverPlayer) {
+                    serverPlayer.inventoryMenu.sendAllDataToRemote();
+                    pContext.getPlayer().displayClientMessage(new TextComponent("All of the chunks you're about to claim are claimed already!")
+                            .withStyle(ChatFormatting.RED), true);
+                }
+                return;
             }
             if (pContext.getPlayer() == null || (
                     team != null && !team.contains(pContext.getPlayer().getUUID()))
@@ -194,6 +206,28 @@ public class MixinHooks {
 
         public static void onUnloaded(BannerExtension banner) {
              banner.setSectionProtectionIsUnloaded(true);
+        }
+
+        public static void unclaim(BannerExtension extension, BannerBlockEntity banner) {
+            if (
+                // MC calls setRemoved when a chunk unloads now as well (see ServerLevel#unload -> LevelChunk#clearAllBlockEntities).
+                // Since we don't want to remove the claimed status of a chunk (which also makes the server freeze in the case of a save in progress), we need to know if it was removed due to unloading.
+                // We can use "unloaded" for that, it's set in #onChunkUnloaded.
+                // Since MC first calls #onChunkUnloaded and then #setRemoved, this check keeps working.
+                !extension.getSectionProtectionIsUnloaded()
+                && extension.isProtectionBanner() && banner.getLevel() != null && !banner.getLevel().isClientSide()) {
+                final var pattern = Banner.from(banner.getPatterns());
+                final var claimData = ClaimedChunks.get(banner.getLevel());
+                ServerConfig.getChunksToClaim(new ChunkPos(banner.getBlockPos()))
+                        .filter(chunk -> {
+                            final var owner = claimData.getOwner(chunk);
+                            if (owner != null) {
+                                return owner.banner().equals(pattern) && (owner.bannerPos() == null || banner.getBlockPos().equals(owner.bannerPos()));
+                            }
+                            return false;
+                        })
+                        .forEach(claimData::removeData);
+            }
         }
     }
 }
