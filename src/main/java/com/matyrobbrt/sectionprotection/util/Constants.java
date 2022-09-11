@@ -5,10 +5,10 @@ import com.google.gson.GsonBuilder;
 import com.matyrobbrt.sectionprotection.SectionProtection;
 import com.matyrobbrt.sectionprotection.api.banner.Banner;
 import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
-import net.minecraft.network.chat.TextComponent;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
@@ -35,12 +35,12 @@ public class Constants {
     public static final Supplier<ItemStack> SP_BOOK = () -> BookBuilder.builder()
         .author("Matyrobbrt")
         .title("SectionProtection Guide")
-        .addPage(new TextComponent(" ")
+        .addPage(Component.literal(" ")
                 .append(t("Section Protection").withStyle(BOLD).withStyle(UNDERLINE))
                 .append(t("\n\nA page by page Guide to using Section Protection, your Banner-based claiming solution.\n \u0020 \u0020 \u0020 \u0020 \n \u0020 \u0020 \u0020 \u0020 \u0020 By\n \u0020 \u0020 \u0020Matyrobbrt")))
         .addPage(component().append(styled("1. Getting Started:", UNDERLINE))
                 .append(t("\nTo get started, all you need is a Banner.\nIf you want to play with multiple people on the same claim, you also need a Lectern.\nTo convert these 2 Blocks into the correct type, right click them with an item tagged as:\n"))
-                .append(t("\"sectionprotection:\nconversion_item\"").withStyle(UNDERLINE).withStyle(s -> s.withColor(0x71DC83).withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new TextComponent("By default, it's a Netherite Ingot per Banner and Lectern."))))))
+                .append(t("\"sectionprotection:\nconversion_item\"").withStyle(UNDERLINE).withStyle(s -> s.withColor(0x71DC83).withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Component.literal("By default, it's a Netherite Ingot per Banner and Lectern."))))))
         .addPage(component().append(styled("2. Setting up a camp:", UNDERLINE))
                 .append(t("\nPlace the Banner and the Lectern down and click the conversion item on them.\nCongratulations, you have created a team and claimed your first Chunk.")))
         .addPage(component().append(styled("3. Teams:", UNDERLINE))
@@ -66,7 +66,7 @@ public class Constants {
                 .append(" represents a unique Team. There are about\n800 quadrillion combinations craftable."))
         .extraNBT(c -> {
             c.putBoolean(SP_GUIDE_TAG, true);
-            Utils.setLore(c, new TextComponent("This book contains useful information on how to claim chunks."));
+            Utils.setLore(c, Component.literal("This book contains useful information on how to claim chunks."));
         })
         .build(new ItemStack(Items.WRITTEN_BOOK));
 
@@ -81,15 +81,15 @@ public class Constants {
         .add("bo", 15)
         .build();
 
-    private static TextComponent t(String str) {
-        return new TextComponent(str);
+    private static MutableComponent t(String str) {
+        return Component.literal(str);
     }
 
     private static MutableComponent styled(String str, ChatFormatting... formatting) {
-        return new TextComponent(str).withStyle(formatting);
+        return Component.literal(str).withStyle(formatting);
     }
 
     private static MutableComponent component() {
-        return new TextComponent("");
+        return Component.literal("");
     }
 }

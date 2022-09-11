@@ -39,10 +39,10 @@ public class AttackBlockEvent extends PlayerEvent {
     }
 
     public Level getLevel() {
-        return getPlayer().level;
+        return getEntity().level;
     }
 
     public ItemStack getItemStack() {
-        return getPlayer().getItemInHand(hand);
+        return getEntity().getItemInHand(hand);
     }
 }

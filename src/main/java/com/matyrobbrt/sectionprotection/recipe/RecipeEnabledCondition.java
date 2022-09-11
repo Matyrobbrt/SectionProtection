@@ -21,8 +21,9 @@ public record RecipeEnabledCondition(String type) implements ICondition {
     }
 
     @Override
-    public boolean test() {
-        return TYPES.get(type).getAsBoolean();
+    public boolean test(IContext context) {
+        // TODO make configs work again, with json configs because server configs are loaded too late
+        return true;
     }
 
     public static final class Serializer implements IConditionSerializer<RecipeEnabledCondition> {

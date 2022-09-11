@@ -9,6 +9,7 @@ import net.minecraft.world.level.block.Block;
 
 import static net.minecraft.core.Registry.*;
 
+@SuppressWarnings("SameParameterValue")
 public class SPTags {
 
     public static final TagKey<Item> IS_CONVERSION_ITEM = create(ITEM_REGISTRY, "conversion_item");

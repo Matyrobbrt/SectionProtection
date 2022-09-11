@@ -32,7 +32,7 @@ public record UnclaimChunkPacket(ResourceKey<Level> dimension, ChunkPos pos, boo
                 ext.sectionProtectionUnclaim();
                 final var state = level.getBlockState(owner.bannerPos());
                 Block.getDrops(state, level, owner.bannerPos(), (BlockEntity) ext).forEach((stack) -> Block.popResource(level, context.getSender().blockPosition(), stack));
-                state.spawnAfterBreak(level, context.getSender().blockPosition(), ItemStack.EMPTY);
+                state.spawnAfterBreak(level, context.getSender().blockPosition(), ItemStack.EMPTY, false);
                 level.destroyBlock(owner.bannerPos(), false, context.getSender());
             }
         }

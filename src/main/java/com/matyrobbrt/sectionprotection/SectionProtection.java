@@ -20,17 +20,16 @@ import com.matyrobbrt.sectionprotection.world.ClaimedChunks;
 import com.mojang.logging.LogUtils;
 import cpw.mods.modlauncher.api.LamdbaExceptionUtils;
 import net.minecraft.ChatFormatting;
-import net.minecraft.network.chat.TextComponent;
+import net.minecraft.core.Registry;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.crafting.CraftingHelper;
-import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.event.entity.item.ItemTossEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.server.ServerStartedEvent;
@@ -44,6 +43,7 @@ import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.fml.loading.FMLLoader;
 import net.minecraftforge.network.NetworkConstants;
 import net.minecraftforge.network.NetworkDirection;
+import net.minecraftforge.registries.RegisterEvent;
 import net.minecraftforge.server.ServerLifecycleHooks;
 import org.slf4j.Logger;
 
@@ -67,7 +67,11 @@ public class SectionProtection {
         ModLoadingContext.get().registerConfig(ModConfig.Type.SERVER, ServerConfig.SPEC, MOD_ID + "-server.toml");
 
         bus.register(ServerConfig.class);
-        bus.addGenericListener(RecipeSerializer.class, (final RegistryEvent.Register<RecipeSerializer<?>> event) -> CraftingHelper.register(new RecipeEnabledCondition.Serializer()));
+        bus.addListener((final RegisterEvent event) -> {
+            if (event.getRegistryKey() == Registry.RECIPE_SERIALIZER_REGISTRY) {
+                CraftingHelper.register(new RecipeEnabledCondition.Serializer());
+            }
+        });
         bus.addListener((final FMLCommonSetupEvent event) -> SPNetwork.register());
 
         MinecraftForge.EVENT_BUS.addListener(SPCommands::register);
@@ -81,7 +85,7 @@ public class SectionProtection {
 
     @SubscribeEvent
     static void onPlayerLogin(final PlayerEvent.PlayerLoggedInEvent event) {
-        if (event.getPlayer() instanceof ServerPlayer player) {
+        if (event.getEntity() instanceof ServerPlayer player) {
             // Send teams first so the info can be there before chunks
             if (SPNetwork.isPresent(player, SPNetwork.TEAM_SYNC_CHANNEL) && SPFeatures.TEAM_SYNC.clientCanReceive(player)) {
                 final var ch = SPNetwork.getChannel(SPFeatures.TEAM_SYNC);
@@ -126,9 +130,9 @@ public class SectionProtection {
 
     @SubscribeEvent
     static void onItemToss(final ItemTossEvent event) {
-        final var item = event.getEntityItem().getItem();
+        final var item = event.getEntity().getItem();
         if (item.getItem() == Items.WRITTEN_BOOK && item.getOrCreateTag().contains(Constants.SP_GUIDE_TAG)) {
-            event.getEntityItem().kill();
+            event.getEntity().kill();
         }
     }
 
@@ -140,17 +144,17 @@ public class SectionProtection {
     }
 
     public static boolean isConversionItem(ItemStack stack) {
-        //noinspection ConstantConditions
+        //noinspection deprecation
         return stack.is(SPTags.IS_CONVERSION_ITEM) || ServerConfig.CONVERSION_ITEMS.get()
-            .stream().anyMatch(s -> stack.getItem().getRegistryName().toString().equals(s));
+            .stream().anyMatch(s -> Registry.ITEM.getKey(stack.getItem()).toString().equals(s));
     }
 
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     public static boolean canClaimChunk(@Nullable Player player, ChunkPos chunk) {
         final var canClaim = !ServerConfig.UNCLAIMABLE_CHUNKS.get().contains(chunk);
         if (!canClaim && player != null)
-            player.displayClientMessage(new TextComponent("The chunk at ")
-                            .append(new TextComponent(chunk.getMiddleBlockPosition(64).toShortString()).withStyle(ChatFormatting.BLUE))
+            player.displayClientMessage(Component.literal("The chunk at ")
+                            .append(Component.literal(chunk.getMiddleBlockPosition(64).toShortString()).withStyle(ChatFormatting.BLUE))
                             .append(" cannot be claimed!")
                     .withStyle(ChatFormatting.RED), true);
         return canClaim;

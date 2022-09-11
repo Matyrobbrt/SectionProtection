@@ -5,7 +5,9 @@ import com.mojang.authlib.GameProfile;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.player.ProfilePublicKey;
 import net.minecraftforge.common.util.FakePlayer;
+import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -18,8 +20,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(FakePlayer.class)
 public abstract class MixinFakePlayer extends ServerPlayer {
 
-    public MixinFakePlayer(MinecraftServer p_143384_, ServerLevel p_143385_, GameProfile p_143386_) {
-        super(p_143384_, p_143385_, p_143386_);
+    public MixinFakePlayer(MinecraftServer pServer, ServerLevel pLevel, GameProfile pProfile, @Nullable ProfilePublicKey pProfilePublicKey) {
+        super(pServer, pLevel, pProfile, pProfilePublicKey);
     }
 
     @Inject(

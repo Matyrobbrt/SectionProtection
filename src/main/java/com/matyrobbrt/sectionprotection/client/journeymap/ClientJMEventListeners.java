@@ -21,7 +21,7 @@ public class ClientJMEventListeners {
     private static final Map<Banner, List<UUID>> STORE = new HashMap<>();
 
     @SubscribeEvent
-    static void logout(final ClientPlayerNetworkEvent.LoggedOutEvent event) {
+    static void logout(final ClientPlayerNetworkEvent.LoggingOut event) {
         JMHelper.getInstance().removeAllMarkers();
     }
 

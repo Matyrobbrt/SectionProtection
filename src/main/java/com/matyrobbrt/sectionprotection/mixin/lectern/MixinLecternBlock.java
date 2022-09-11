@@ -5,7 +5,7 @@ import com.matyrobbrt.sectionprotection.SectionProtection;
 import com.matyrobbrt.sectionprotection.util.ServerConfig;
 import com.matyrobbrt.sectionprotection.api.extensions.LecternExtension;
 import net.minecraft.core.BlockPos;
-import net.minecraft.network.chat.TextComponent;
+import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
@@ -52,7 +52,7 @@ public abstract class MixinLecternBlock extends Block {
                 }
                 extensionLectern.setProtectionLectern(true);
                 cir.setReturnValue(InteractionResult.CONSUME);
-                pPlayer.displayClientMessage(new TextComponent("The Lectern has been converted to a Protection Lectern"), true);
+                pPlayer.displayClientMessage(Component.literal("The Lectern has been converted to a Protection Lectern"), true);
             }
         });
     }

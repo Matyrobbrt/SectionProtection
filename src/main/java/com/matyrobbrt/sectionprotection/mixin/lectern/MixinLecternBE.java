@@ -16,6 +16,7 @@ import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.contents.LiteralContents;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.WritableBookItem;
@@ -109,7 +110,7 @@ public abstract class MixinLecternBE extends BlockEntity implements LecternExten
                     try {
                         final var json = Constants.GSON.fromJson(l, JsonObject.class);
                         final var comp = Component.Serializer.fromJson(json);
-                        var str = comp.getContents();
+                        var str = comp.getContents() instanceof LiteralContents lit ? lit.text() : comp.getContents().toString();
                         for (final var s : comp.getSiblings()) {
                             str = str + s + "\n";
                         }

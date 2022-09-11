@@ -1,11 +1,12 @@
 {
   "type": "minecraft:crafting_shaped",
-  "group": "sp_easier_banners",
-  "pattern": [
-    "CCC",
-    "CCC",
-    " S "
+  "conditions": [
+    {
+      "type": "sectionprotection:enabled",
+      "recipe_type": "easier_banners"
+    }
   ],
+  "group": "sp_easier_banners",
   "key": {
     "C": {
       "item": "minecraft:red_carpet"
@@ -14,14 +15,13 @@
       "tag": "forge:rods/wooden"
     }
   },
+  "pattern": [
+    "CCC",
+    "CCC",
+    " S "
+  ],
   "result": {
-    "item": "minecraft:red_banner",
-    "count": 2
-  },
-  "conditions": [
-    {
-      "recipe_type": "easier_banners",
-      "type": "sectionprotection:enabled"
-    }
-  ]
+    "count": 2,
+    "item": "minecraft:red_banner"
+  }
 }

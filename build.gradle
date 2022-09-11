@@ -51,7 +51,7 @@ java.toolchain.languageVersion = JavaLanguageVersion.of(17)
 
 println "Java: ${System.getProperty 'java.version'}, JVM: ${System.getProperty 'java.vm.version'} (${System.getProperty 'java.vendor'}), Arch: ${System.getProperty 'os.arch'}"
 minecraft {
-    mappings channel: 'parchment', version: '2022.05.02-1.18.2'
+    mappings channel: 'parchment', version: '2022.09.04-1.19.2'
 
     runs {
         configureEach {
@@ -114,8 +114,9 @@ dependencies {
 //    runtimeOnly fg.deobf("curse.maven:flywheel-486392:3737402")
 //    runtimeOnly fg.deobf("curse.maven:create-328085:3737418")
 
-    compileOnly 'info.journeymap:journeymap-api:1.18.2-1.9-SNAPSHOT'
-    runtimeOnly fg.deobf('curse.maven:journeymap-32274:3796379')
+    compileOnly 'info.journeymap:journeymap-api:1.19.1-1.9-SNAPSHOT'
+    if ('runData' !in gradle.startParameter.taskNames)
+        runtimeOnly fg.deobf('curse.maven:journeymap-32274:3927230')
 
     annotationProcessor 'org.spongepowered:mixin:0.8.4:processor'
 
@@ -125,7 +126,6 @@ dependencies {
     def vcollections = '0.3.3'
     minecraftLibrary "eu.mihosoft.vcollections:vcollections:$vcollections"
     library "eu.mihosoft.vcollections:vcollections:$vcollections"
-    jarJar "eu.mihosoft.vcollections:vcollections:[$vcollections,)"
 }
 
 final var expands = [
@@ -262,8 +262,8 @@ publishing {
                     "https://s01.oss.sonatype.org/content/repositories/snapshots/"
                     : "https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/"
             credentials {
-                username = findProperty("ossrhUser") ? ossrhUser : ""
-                password = findProperty("ossrhPassword") ? ossrhPassword : ""
+                username = findProperty('ossrhUser') ? ossrhUser : ""
+                password = findProperty('ossrhPassword') ? ossrhPassword : ""
             }
         }
     }
@@ -287,7 +287,7 @@ void configurePom(MavenPom pom) {
         }
     }
     pom.scm {
-        connection = 'scm:git:git:github.com/matyrobbrt/curseforgejavaapi.git'
+        connection = 'scm:git:git:github.com/matyrobbrt/SectionProtection.git'
         developerConnection = 'scm:git:ssh://github.com/Matyrobbrt/SectionProtection.git'
         url = 'https://github.com/Matyrobbrt/SectionProtection'
     }
@@ -295,8 +295,8 @@ void configurePom(MavenPom pom) {
 
 nexusStaging {
     serverUrl = "https://s01.oss.sonatype.org/service/local/"
-    username = findProperty("ossrhUser") ? ossrhUser : ""
-    password = findProperty("ossrhPassword") ? ossrhPassword : ""
+    username = findProperty('ossrhUser') ? ossrhUser : ""
+    password = findProperty('ossrhPassword') ? ossrhPassword : ""
 }
 signing {
     sign publishing.publications.maven

@@ -1,9 +1,6 @@
 package com.matyrobbrt.sectionprotection.util;
 
 import com.matyrobbrt.sectionprotection.SectionProtection;
-import com.matyrobbrt.sectionprotection.recipe.RecipeEnabledCondition;
-import com.matyrobbrt.sectionprotection.util.Utils;
-import com.matyrobbrt.sectionprotection.util.Value;
 import net.minecraft.core.Registry;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.ChunkPos;
@@ -88,14 +85,6 @@ public class ServerConfig {
         }
         builder.pop();
 
-        builder.comment("SectionProtection recipes configuration.")
-            .push("recipes");
-        {
-            builder.defineRecipeEnabled("banner_recolouring");
-            builder.defineRecipeEnabled("easier_banners");
-        }
-        builder.pop();
-
         SPEC = builder.build();
     }
 
@@ -106,17 +95,17 @@ public class ServerConfig {
     @SubscribeEvent
     static void configChanged(ModConfigEvent.Reloading event) {
         SectionProtection.LOGGER.debug("Loaded SectionProtection config file {}", event.getConfig().getFileName());
-        reloadChunksConfigs();
+        reloadChunksConfigs(false);
     }
 
     @SubscribeEvent
     static void configLoaded(ModConfigEvent.Loading event) {
         SectionProtection.LOGGER.debug("SectionProtection config just got changed on the file system!");
-        reloadChunksConfigs();
+        reloadChunksConfigs(true);
     }
 
-    private static void reloadChunksConfigs() {
-        ChunksValueConfig.ALL.forEach(ChunksValueConfig::reload);
+    private static void reloadChunksConfigs(boolean defaultValue) {
+        ChunksValueConfig.ALL.forEach(it -> it.reload(defaultValue));
     }
 
     public static final class ChunksValueConfig extends Value<Set<ChunkPos>> {
@@ -130,8 +119,8 @@ public class ServerConfig {
             ALL.add(this);
         }
 
-        private void reload() {
-            accept(cfg.get().stream().flatMap(s -> Utils.chunkPosFromString(s).stream()).collect(Collectors.toSet()));
+        private void reload(boolean defaultValue) {
+            accept((defaultValue ? cfg.getDefault() : cfg.get()).stream().flatMap(s -> Utils.chunkPosFromString(s).stream()).collect(Collectors.toSet()));
         }
     }
 
@@ -149,14 +138,6 @@ public class ServerConfig {
         public ChunksValueConfig defineChunks(String path, List<String> defaultValues) {
             final var cfg = this.defineListAllowEmpty(List.of(path), () -> defaultValues, e -> true);
             return new ChunksValueConfig(defaultValues.stream().flatMap(str -> Utils.chunkPosFromString(str).stream()).collect(Collectors.toSet()), cfg);
-        }
-
-        @SuppressWarnings("all")
-        public ForgeConfigSpec.BooleanValue defineRecipeEnabled(String type) {
-            final var cfg = comment("If recipes of the type \"" + type + "\" should be enabled.")
-                .define(type, true);
-            RecipeEnabledCondition.TYPES.put(type, cfg::get);
-            return cfg;
         }
     }
 }

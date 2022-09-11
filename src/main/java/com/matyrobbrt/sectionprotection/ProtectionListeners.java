@@ -8,12 +8,10 @@ import com.matyrobbrt.sectionprotection.util.Utils;
 import com.matyrobbrt.sectionprotection.world.Banners;
 import com.matyrobbrt.sectionprotection.world.ClaimedChunks;
 import net.minecraft.ChatFormatting;
-import net.minecraft.Util;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Registry;
-import net.minecraft.network.chat.ChatType;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.network.chat.TextComponent;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.monster.piglin.Piglin;
 import net.minecraft.world.entity.npc.Villager;
@@ -23,7 +21,7 @@ import net.minecraft.world.level.Level;
 import net.minecraftforge.common.util.FakePlayer;
 import net.minecraftforge.event.entity.EntityMobGriefingEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent.RightClickBlock;
-import net.minecraftforge.event.world.BlockEvent;
+import net.minecraftforge.event.level.BlockEvent;
 import net.minecraftforge.eventbus.api.Event;
 import net.minecraftforge.eventbus.api.Event.Result;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -50,7 +48,7 @@ public class ProtectionListeners {
     static void onBreakEvent(final BlockEvent.BreakEvent event) {
         if (event.getPlayer() instanceof ServerPlayer player) {
             checkCanExecute(event, player, ActionType.BREAKING,
-                    ctx -> ctx.canBreak(player, (Level) event.getWorld(), event.getPos(), event.getState()));
+                    ctx -> ctx.canBreak(player, (Level) event.getLevel(), event.getPos(), event.getState()));
         }
     }
 
@@ -70,19 +68,19 @@ public class ProtectionListeners {
 
     @SubscribeEvent
     static void interact(final RightClickBlock event) {
-        if (event.getPlayer() instanceof ServerPlayer player) {
+        if (event.getEntity() instanceof ServerPlayer player) {
             if (event.getItemStack().getItem() instanceof BlockItem)
                 return; // Block item place is considered a right click event
             checkCanExecute(event, RightClickBlock::getPos, player, ActionType.BLOCK_INTERACTION,
                     ctx -> ctx.canInteract(player, ActionType.InteractionContext.InteractionType.RIGHT_CLICK,
-                            event.getHand(), event.getWorld(), event.getPos(), event.getWorld().getBlockState(event.getPos())),
+                            event.getHand(), event.getLevel(), event.getPos(), event.getLevel().getBlockState(event.getPos())),
                     true);
         }
     }
 
     @SubscribeEvent
     static void attack(final AttackBlockEvent event) {
-        if (event.getPlayer() instanceof ServerPlayer player) {
+        if (event.getEntity() instanceof ServerPlayer player) {
             checkCanExecute(event, AttackBlockEvent::getPos, player, ActionType.BLOCK_INTERACTION,
                     ctx -> ctx.canInteract(player, ActionType.InteractionContext.InteractionType.LEFT_CLICK,
                             event.getHand(), event.getLevel(), event.getPos(), event.getLevel().getBlockState(event.getPos())),
@@ -111,6 +109,7 @@ public class ProtectionListeners {
         checkCanExecute(event, BlockEvent::getPos, player);
     }
 
+    @SuppressWarnings("SameParameterValue")
     private static <T> void checkCanExecute(final BlockEvent event, final ServerPlayer player, final ActionType<T> type, Function<T, ActionType.Result> checker) {
         checkCanExecute(event, BlockEvent::getPos, player, type, checker, true);
     }
@@ -142,13 +141,12 @@ public class ProtectionListeners {
                     cancelWithContainerUpdate(event, player);
                     if (sendFeedback) {
                         final MutableComponent playerName = Utils.getOwnerName(player.server, team)
-                                .map(g -> new TextComponent(g).withStyle(Constants.WITH_PLAYER_NAME))
-                                .orElse(new TextComponent("someone else").withStyle(ChatFormatting.GRAY));
-                        player.sendMessage(new TextComponent(
+                                .map(g -> Component.literal(g).withStyle(Constants.WITH_PLAYER_NAME))
+                                .orElse(Component.literal("someone else").withStyle(ChatFormatting.GRAY));
+                        player.displayClientMessage(Component.literal(
                                         "We're sorry, we can't let you do that! This chunk is owned by ")
                                         .withStyle(ChatFormatting.GRAY)
-                                        .append(playerName),
-                                ChatType.GAME_INFO, Util.NIL_UUID);
+                                        .append(playerName), true);
                     }
                 }
             }

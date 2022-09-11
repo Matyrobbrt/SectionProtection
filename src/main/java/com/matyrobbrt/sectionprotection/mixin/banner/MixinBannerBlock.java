@@ -1,16 +1,15 @@
 package com.matyrobbrt.sectionprotection.mixin.banner;
 
-import com.matyrobbrt.sectionprotection.util.ServerConfig;
-import com.matyrobbrt.sectionprotection.util.Constants;
 import com.matyrobbrt.sectionprotection.SectionProtection;
 import com.matyrobbrt.sectionprotection.api.banner.Banner;
 import com.matyrobbrt.sectionprotection.api.extensions.BannerExtension;
+import com.matyrobbrt.sectionprotection.util.Constants;
+import com.matyrobbrt.sectionprotection.util.ServerConfig;
 import com.matyrobbrt.sectionprotection.world.Banners;
 import com.matyrobbrt.sectionprotection.world.ClaimedChunks;
 import net.minecraft.ChatFormatting;
-import net.minecraft.Util;
 import net.minecraft.core.BlockPos;
-import net.minecraft.network.chat.TextComponent;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -55,7 +54,7 @@ public abstract class MixinBannerBlock extends Block {
                         if (chunks.stream().anyMatch(c -> (ServerConfig.ONLY_FULL_CLAIM.get() && manager.isOwned(c)) || !SectionProtection.canClaimChunk(player, c)))
                             return; // Don't bother sending feedback... if they bypassed BlockItem#use then they probably are doing something weird
                         final var banners = Banners.get(Objects.requireNonNull(pLevel.getServer()));
-                        final var pattern = Banner.from(banner.getPatterns());
+                        final var pattern = Banner.fromHolder(banner.getPatterns());
                         final var team = banners.getMembers(pattern);
                         if (team != null) {
                             if (team.contains(player.getUUID())) {
@@ -70,7 +69,7 @@ public abstract class MixinBannerBlock extends Block {
                                 if (!manager.isOwned(c))
                                     manager.setOwner(c, pattern, pPos);
                             });
-                            player.sendMessage(new TextComponent("Created new team!").withStyle(ChatFormatting.GRAY), Util.NIL_UUID);
+                            player.sendSystemMessage(Component.literal("Created new team!").withStyle(ChatFormatting.GRAY));
                         }
                     }
                 }

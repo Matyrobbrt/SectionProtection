@@ -4,7 +4,6 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TextComponent;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.WrittenBookItem;
 
@@ -25,7 +24,7 @@ public class BookBuilder {
     }
 
     public BookBuilder addPage(String page) {
-        this.pages.add(new TextComponent(page));
+        this.pages.add(Component.literal(page));
         return this;
     }
 

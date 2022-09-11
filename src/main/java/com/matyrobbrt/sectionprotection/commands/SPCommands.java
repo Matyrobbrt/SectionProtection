@@ -21,9 +21,9 @@ import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
 import net.minecraft.commands.arguments.coordinates.Coordinates;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.ClickEvent;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.network.chat.TextComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.player.Player;
@@ -89,25 +89,25 @@ public class SPCommands {
         final var manager = ClaimedChunks.get(context.getSource().getLevel());
         final var chunkData = manager.getOwner(pos);
         if (chunkData == null) {
-            context.getSource().sendFailure(new TextComponent("The chunk at ")
-                    .append(new TextComponent(pos.toShortString()).withStyle(ChatFormatting.AQUA))
+            context.getSource().sendFailure(Component.literal("The chunk at ")
+                    .append(Component.literal(pos.toShortString()).withStyle(ChatFormatting.AQUA))
                     .append(" is not claimed!"));
             return Command.SINGLE_SUCCESS;
         }
         if (!context.getSource().hasPermission(Commands.LEVEL_GAMEMASTERS)) {
             final var team = Banners.get(context.getSource().getServer()).getMembers(chunkData.banner());
             if (team != null && !team.contains(context.getSource().getPlayerOrException().getUUID())) {
-                context.getSource().sendFailure(new TextComponent("You do not have permission to know the position of the banner protecting that chunk!"));
+                context.getSource().sendFailure(Component.literal("You do not have permission to know the position of the banner protecting that chunk!"));
                 return Command.SINGLE_SUCCESS;
             }
         }
         if (chunkData.bannerPos() != null) {
-            context.getSource().sendSuccess(new TextComponent("The banner protecting the chunk at ")
-                    .append(new TextComponent(pos.toShortString()).withStyle(ChatFormatting.AQUA))
+            context.getSource().sendSuccess(Component.literal("The banner protecting the chunk at ")
+                    .append(Component.literal(pos.toShortString()).withStyle(ChatFormatting.AQUA))
                     .append(" is at ")
-                    .append(new TextComponent(chunkData.bannerPos().toShortString()).withStyle(ChatFormatting.GOLD)), true);
+                    .append(Component.literal(chunkData.bannerPos().toShortString()).withStyle(ChatFormatting.GOLD)), true);
         } else {
-            context.getSource().sendFailure(new TextComponent("The position of the banner protecting that chunk is unknown! This may be caused by upgrading from an older version of SectionProtection."));
+            context.getSource().sendFailure(Component.literal("The position of the banner protecting that chunk is unknown! This may be caused by upgrading from an older version of SectionProtection."));
         }
         return Command.SINGLE_SUCCESS;
     }
@@ -116,15 +116,15 @@ public class SPCommands {
         final var manager = ClaimedChunks.get(context.getSource().getLevel());
         final var data = manager.getOwner(pos);
         if (data == null) {
-            context.getSource().sendFailure(new TextComponent("The chunk at ")
-                    .append(new TextComponent(pos.toShortString()).withStyle(ChatFormatting.AQUA))
+            context.getSource().sendFailure(Component.literal("The chunk at ")
+                    .append(Component.literal(pos.toShortString()).withStyle(ChatFormatting.AQUA))
                     .append(" is not claimed!"));
             return Command.SINGLE_SUCCESS;
         }
         if (!context.getSource().hasPermission(Commands.LEVEL_GAMEMASTERS)) {
             final var team = Banners.get(context.getSource().getServer()).getMembers(data.banner());
             if (team != null && !team.contains(context.getSource().getPlayerOrException().getUUID())) {
-                context.getSource().sendFailure(new TextComponent("You cannot unclaim somebody else's chunk!"));
+                context.getSource().sendFailure(Component.literal("You cannot unclaim somebody else's chunk!"));
                 return Command.SINGLE_SUCCESS;
             }
         }
@@ -137,13 +137,13 @@ public class SPCommands {
             }
             context.getSource().getLevel().destroyBlock(data.bannerPos(), true, context.getSource().getEntity());
         }
-        context.getSource().sendSuccess(new TextComponent("Chunk at ").append(new TextComponent(pos.toShortString()).withStyle(ChatFormatting.AQUA))
+        context.getSource().sendSuccess(Component.literal("Chunk at ").append(Component.literal(pos.toShortString()).withStyle(ChatFormatting.AQUA))
                 .append(" has been unclaimed!"), true);
         return Command.SINGLE_SUCCESS;
     }
 
     private static int listConversionItems(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
-        MutableComponent text = new TextComponent("Items usable as conversion items: ");
+        MutableComponent text = Component.literal("Items usable as conversion items: ");
         final var all = Stream.concat(
             Objects.requireNonNull(ForgeRegistries.ITEMS.tags()).getTag(SPTags.IS_CONVERSION_ITEM).stream(),
             ServerConfig.CONVERSION_ITEMS.get().stream().map(ResourceLocation::new).map(ForgeRegistries.ITEMS::getValue).filter(Objects::nonNull)
@@ -160,17 +160,17 @@ public class SPCommands {
     }
 
     private static int listFakePlayers(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
-        MutableComponent text = new TextComponent("FakePlayers present in this server: ");
+        MutableComponent text = Component.literal("FakePlayers present in this server: ");
         final var all = FakePlayerHolder.getAll();
         if (all.isEmpty()) {
-            text = new TextComponent("No FakePlayers are present in this server.");
+            text = Component.literal("No FakePlayers are present in this server.");
         }
         for (final var it = all.iterator(); it.hasNext();) {
             final var fake = it.next();
             text = text.append(fake.getName().copy()
                     .withStyle(Constants.WITH_PLAYER_NAME)
                     .withStyle(s -> s.withClickEvent(new ClickEvent(ClickEvent.Action.COPY_TO_CLIPBOARD, fake.getGameProfile().getName())))
-                    .withStyle(s -> s.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new TextComponent(fake.getUUID().toString())))));
+                    .withStyle(s -> s.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Component.literal(fake.getUUID().toString())))));
             if (it.hasNext()) {
                 text = text.append(", ");
             }
@@ -182,7 +182,7 @@ public class SPCommands {
     private static int guideBook(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         if (context.getSource().getEntity() instanceof Player player) {
             if (player.getInventory().add(Constants.SP_BOOK.get())) {
-                context.getSource().sendSuccess(new TextComponent("You have been given a SectionProtection guide book!"), false);
+                context.getSource().sendSuccess(Component.literal("You have been given a SectionProtection guide book!"), false);
             }
         }
         return Command.SINGLE_SUCCESS;
@@ -190,16 +190,16 @@ public class SPCommands {
 
     private static int version(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         if (SectionProtection.VERSION == null) {
-            context.getSource().sendFailure(new TextComponent("The SectionProtection version cannot be determined in a development environment!"));
+            context.getSource().sendFailure(Component.literal("The SectionProtection version cannot be determined in a development environment!"));
             return 1;
         }
-        final var text = new TextComponent("SectionProtection version information:")
+        final var text = Component.literal("SectionProtection version information:")
             .append("\n")
-            .append("Mod Version: ").append(new TextComponent(SectionProtection.VERSION.version()).withStyle(ChatFormatting.AQUA))
+            .append("Mod Version: ").append(Component.literal(SectionProtection.VERSION.version()).withStyle(ChatFormatting.AQUA))
             .append("\n")
-            .append("Timestamp: ").append(new TextComponent(SectionProtection.VERSION.timestamp()).withStyle(ChatFormatting.AQUA))
+            .append("Timestamp: ").append(Component.literal(SectionProtection.VERSION.timestamp()).withStyle(ChatFormatting.AQUA))
             .append("\n")
-            .append("Commit ID: ").append(new TextComponent(SectionProtection.VERSION.commitId()).withStyle(ChatFormatting.AQUA));
+            .append("Commit ID: ").append(Component.literal(SectionProtection.VERSION.commitId()).withStyle(ChatFormatting.AQUA));
         context.getSource().sendSuccess(text, false);
         return Command.SINGLE_SUCCESS;
     }
@@ -212,10 +212,10 @@ public class SPCommands {
         }
         final var chunkPos = context.getSource().getLevel().getChunkAt(blockpos).getPos();
         final var pos = chunkPos.x + "," + chunkPos.z;
-        context.getSource().sendSuccess(new TextComponent("The positions of the chunk containing the block with the position ")
-                .append(new TextComponent(blockpos.toShortString()).withStyle(ChatFormatting.AQUA))
+        context.getSource().sendSuccess(Component.literal("The positions of the chunk containing the block with the position ")
+                .append(Component.literal(blockpos.toShortString()).withStyle(ChatFormatting.AQUA))
                 .append(" are ")
-                .append(new TextComponent(pos).withStyle(s -> s.withColor(ChatFormatting.GOLD).withClickEvent(new ClickEvent(ClickEvent.Action.COPY_TO_CLIPBOARD, pos)))), false);
+                .append(Component.literal(pos).withStyle(s -> s.withColor(ChatFormatting.GOLD).withClickEvent(new ClickEvent(ClickEvent.Action.COPY_TO_CLIPBOARD, pos)))), false);
         return Command.SINGLE_SUCCESS;
     }
 
@@ -236,10 +236,10 @@ public class SPCommands {
             .ifPresentOrElse(team -> {
                 final var members = team.stream()
                     .flatMap(uuid -> Utils.getPlayerName(context.getSource().getServer(), uuid).stream())
-                    .map(name -> new TextComponent(name).withStyle(Constants.WITH_PLAYER_NAME))
+                    .map(name -> Component.literal(name).withStyle(Constants.WITH_PLAYER_NAME))
                     .toList();
-                MutableComponent text = new TextComponent("The chunk at ")
-                        .append(new TextComponent(blockpos.toShortString()).withStyle(ChatFormatting.AQUA))
+                MutableComponent text = Component.literal("The chunk at ")
+                        .append(Component.literal(blockpos.toShortString()).withStyle(ChatFormatting.AQUA))
                         .append(" is owned by: ");
                 for (var i = 0; i < members.size(); i++) {
                     text = text.append(members.get(i));
@@ -250,8 +250,8 @@ public class SPCommands {
                     }
                 }
                 context.getSource().sendSuccess(text, false);
-            }, () -> context.getSource().sendSuccess(new TextComponent("No team owns the chunk at ")
-                    .append(new TextComponent(blockpos.toShortString()).withStyle(ChatFormatting.AQUA)), false));
+            }, () -> context.getSource().sendSuccess(Component.literal("No team owns the chunk at ")
+                    .append(Component.literal(blockpos.toShortString()).withStyle(ChatFormatting.AQUA)), false));
         return Command.SINGLE_SUCCESS;
     }
 }

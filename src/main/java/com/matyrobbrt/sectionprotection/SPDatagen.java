@@ -11,9 +11,9 @@ import net.minecraft.tags.ItemTags;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.level.block.BannerBlock;
 import net.minecraftforge.common.Tags;
+import net.minecraftforge.data.event.GatherDataEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.forge.event.lifecycle.GatherDataEvent;
 
 import javax.annotation.Nonnull;
 import java.util.function.Consumer;
@@ -24,7 +24,7 @@ public class SPDatagen {
     @SubscribeEvent
     static void onDatagen(final GatherDataEvent event) {
         final var gen = event.getGenerator();
-        gen.addProvider(new RecipeProvider(gen));
+        gen.addProvider(event.includeServer(), new RecipeProvider(gen));
     }
 
     static class RecipeProvider extends net.minecraft.data.recipes.RecipeProvider {
@@ -64,7 +64,7 @@ public class SPDatagen {
                     .pattern("CCC")
                     .pattern("CCC")
                     .pattern("DSD")
-                    .define('C', ItemTags.CARPETS)
+                    .define('C', ItemTags.WOOL_CARPETS)
                     .define('S', Tags.Items.RODS_WOODEN)
                     .define('D', dye.getTag())
                     .save(consumer, new ResourceLocation(SectionProtection.MOD_ID, "easier_banners/" + dye.getName() + "_wildcard"));

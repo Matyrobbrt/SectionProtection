@@ -11,8 +11,8 @@ import com.matyrobbrt.sectionprotection.world.ClaimedChunks;
 import net.minecraft.ChatFormatting;
 import net.minecraft.Util;
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.network.chat.TextComponent;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -65,8 +65,8 @@ public class MixinHooks {
                 } else if ((ServerConfig.ONLY_FULL_CLAIM.get() || sub.equals(pos)) && data.isOwned(sub)) {
                     cir.setReturnValue(InteractionResult.FAIL);
                     if (pContext.getPlayer() != null) {
-                        pContext.getPlayer().displayClientMessage(new TextComponent("The chunk at ")
-                                .append(new TextComponent(sub.getMiddleBlockPosition(64).toShortString()).withStyle(ChatFormatting.BLUE))
+                        pContext.getPlayer().displayClientMessage(Component.literal("The chunk at ")
+                                .append(Component.literal(sub.getMiddleBlockPosition(64).toShortString()).withStyle(ChatFormatting.BLUE))
                                 .append(" is claimed already!").withStyle(ChatFormatting.RED), true);
                         pContext.getPlayer().containerMenu.sendAllDataToRemote();
                     }
@@ -79,7 +79,7 @@ public class MixinHooks {
                 cir.setReturnValue(InteractionResult.FAIL);
                 if (pContext.getPlayer() instanceof ServerPlayer serverPlayer) {
                     serverPlayer.inventoryMenu.sendAllDataToRemote();
-                    pContext.getPlayer().displayClientMessage(new TextComponent("All of the chunks you're about to claim are claimed already!")
+                    pContext.getPlayer().displayClientMessage(Component.literal("All of the chunks you're about to claim are claimed already!")
                             .withStyle(ChatFormatting.RED), true);
                 }
                 return;
@@ -91,9 +91,9 @@ public class MixinHooks {
                 if (pContext.getPlayer() instanceof ServerPlayer serverPlayer) {
                     serverPlayer.inventoryMenu.sendAllDataToRemote();
                     final MutableComponent ownerName = Utils.getOwnerName(pContext.getLevel().getServer(), team)
-                            .map(g -> new TextComponent(g).withStyle(s -> s.withColor(0x009B00)))
-                            .orElse(new TextComponent("someone else"));
-                    pContext.getPlayer().displayClientMessage(new TextComponent("This pattern is owned by ")
+                            .map(g -> Component.literal(g).withStyle(s -> s.withColor(0x009B00)))
+                            .orElse(Component.literal("someone else"));
+                    pContext.getPlayer().displayClientMessage(Component.literal("This pattern is owned by ")
                             .withStyle(ChatFormatting.RED)
                             .append(ownerName), true);
                 }
@@ -109,7 +109,7 @@ public class MixinHooks {
                 final var stack = sup.get(0);
                 stack.getOrCreateTag().putBoolean(Constants.PROTECTION_LECTERN, ext.isProtectionLectern());
 				if (ext.isProtectionLectern())
-					Utils.setLore(stack, new TextComponent("Protection Lectern").withStyle(ChatFormatting.AQUA));
+					Utils.setLore(stack, Component.literal("Protection Lectern").withStyle(ChatFormatting.AQUA));
             }
             return sup;
         }
@@ -140,8 +140,8 @@ public class MixinHooks {
                     cir.setReturnValue(InteractionResult.FAIL);
                     return;
                 } else if ((ServerConfig.ONLY_FULL_CLAIM.get() || subPos.equals(chunk)) && claimedData.isOwned(subPos)) {
-                    pPlayer.displayClientMessage(new TextComponent("The chunk at ")
-                            .append(new TextComponent(subPos.getMiddleBlockPosition(64).toShortString()).withStyle(ChatFormatting.BLUE))
+                    pPlayer.displayClientMessage(Component.literal("The chunk at ")
+                            .append(Component.literal(subPos.getMiddleBlockPosition(64).toShortString()).withStyle(ChatFormatting.BLUE))
                             .append(" is claimed already!").withStyle(ChatFormatting.RED), true);
                     pPlayer.containerMenu.sendAllDataToRemote();
                     cir.setReturnValue(InteractionResult.FAIL);
@@ -150,9 +150,9 @@ public class MixinHooks {
             }
             pLevel.getBlockEntity(pPos, BlockEntityType.BANNER).ifPresent(banner -> {
                 final var extensionBanner = ((BannerExtension) banner);
-                final var pattern = Banner.from(banner.getPatterns());
+                final var pattern = Banner.fromHolder(banner.getPatterns());
                 if (pattern.equals(Constants.OMINOUS)) {
-                    pPlayer.sendMessage(new TextComponent("Sorry, but Ominous Banners cannot be converted into Protection Banners."), Util.NIL_UUID);
+                    pPlayer.sendSystemMessage(Component.literal("Sorry, but Ominous Banners cannot be converted into Protection Banners."));
                     return;
                 }
                 if (!extensionBanner.isProtectionBanner()) {
@@ -169,7 +169,7 @@ public class MixinHooks {
                                 stack.shrink(1);
                             }
                             cir.setReturnValue(InteractionResult.PASS);
-                            pPlayer.displayClientMessage(new TextComponent("The Banner has been converted to a Protection Banner"), true);
+                            pPlayer.displayClientMessage(Component.literal("The Banner has been converted to a Protection Banner"), true);
                         }
                     } else {
                         banners.createTeam(pattern, pPlayer.getUUID());
@@ -181,9 +181,9 @@ public class MixinHooks {
                         if (!pPlayer.isCreative() && ServerConfig.CONSUME_CONVERSION_ITEM.get()) {
                             stack.shrink(1);
                         }
-                        pPlayer.sendMessage(new TextComponent("Created new team!").withStyle(ChatFormatting.GRAY), Util.NIL_UUID);
+                        pPlayer.sendSystemMessage(Component.literal("Created new team!").withStyle(ChatFormatting.GRAY));
                         cir.setReturnValue(InteractionResult.PASS);
-                        pPlayer.displayClientMessage(new TextComponent("The Banner has been converted to a Protection Banner"), true);
+                        pPlayer.displayClientMessage(Component.literal("The Banner has been converted to a Protection Banner"), true);
                     }
                 }
             });
@@ -195,7 +195,7 @@ public class MixinHooks {
                 final var stack = sup.get(0);
                 stack.getOrCreateTag().putBoolean(Constants.PROTECTION_BANNER, ext.isProtectionBanner());
 				if (ext.isProtectionBanner())
-					Utils.setLore(stack, new TextComponent("Protection Banner").withStyle(ChatFormatting.AQUA));
+					Utils.setLore(stack, Component.literal("Protection Banner").withStyle(ChatFormatting.AQUA));
             }
             return sup;
         }
@@ -216,7 +216,7 @@ public class MixinHooks {
                 // Since MC first calls #onChunkUnloaded and then #setRemoved, this check keeps working.
                 !extension.getSectionProtectionIsUnloaded()
                 && extension.isProtectionBanner() && banner.getLevel() != null && !banner.getLevel().isClientSide()) {
-                final var pattern = Banner.from(banner.getPatterns());
+                final var pattern = Banner.fromHolder(banner.getPatterns());
                 final var claimData = ClaimedChunks.get(banner.getLevel());
                 ServerConfig.getChunksToClaim(new ChunkPos(banner.getBlockPos()))
                         .filter(chunk -> {

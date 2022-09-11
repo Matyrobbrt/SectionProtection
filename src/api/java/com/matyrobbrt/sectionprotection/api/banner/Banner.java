@@ -4,11 +4,14 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.mojang.datafixers.util.Pair;
 import net.minecraft.Util;
+import net.minecraft.core.Holder;
+import net.minecraft.core.Registry;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.level.block.entity.BannerPattern;
+import net.minecraft.world.level.block.entity.BannerPatterns;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,7 +36,7 @@ public record Banner(List<Data> data) {
     public Banner(ListTag nbt, DyeColor base) {
         this(Util.make(() -> {
             final var data = ImmutableList.<Data>builder();
-            data.add(new Data(base, BannerPattern.BASE));
+            data.add(new Data(base, Registry.BANNER_PATTERN.get(BannerPatterns.BASE)));
             if (nbt == null) {
                 return data.build();
             }
@@ -47,6 +50,9 @@ public record Banner(List<Data> data) {
 
     public static Banner from(List<Pair<BannerPattern, DyeColor>> list) {
         return new Banner(list.stream().map(p -> new Banner.Data(p.getSecond(), p.getFirst())).toList());
+    }
+    public static Banner fromHolder(List<Pair<Holder<BannerPattern>, DyeColor>> list) {
+        return new Banner(list.stream().map(p -> new Banner.Data(p.getSecond(), p.getFirst().value())).toList());
     }
 
     public ListTag serialize() {
@@ -93,7 +99,8 @@ public record Banner(List<Data> data) {
     public record Data(DyeColor color, BannerPattern pattern) {
 
         public Data(int color, String pattern) {
-            this(DyeColor.byId(color), BannerPattern.byHash(pattern));
+            //noinspection ConstantConditions
+            this(DyeColor.byId(color), BannerPattern.byHash(pattern).get());
         }
 
         public Data(CompoundTag nbt) {
@@ -126,7 +133,8 @@ public record Banner(List<Data> data) {
         }
 
         public Builder add(String pattern, int colour) {
-            return add(BannerPattern.byHash(pattern), DyeColor.byId(colour));
+            //noinspection ConstantConditions
+            return add(BannerPattern.byHash(pattern).get(), DyeColor.byId(colour));
         }
 
         public Banner build() {
