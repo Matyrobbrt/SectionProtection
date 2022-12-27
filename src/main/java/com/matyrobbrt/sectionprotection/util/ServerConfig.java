@@ -7,10 +7,13 @@ import net.minecraft.world.level.ChunkPos;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.event.config.ModConfigEvent;
+import net.minecraftforge.fml.unsafe.UnsafeHacks;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -92,15 +95,40 @@ public class ServerConfig {
         return ChunkPos.rangeClosed(centre, CLAIM_RADIUS.get());
     }
 
+
+    private static Predicate<ForgeConfigSpec.ConfigValue<?>> IS_LOADED;
+    static {
+        try {
+            final var SPEC_FIELD = ForgeConfigSpec.ConfigValue.class.getDeclaredField("spec");
+            final var CHILD_CONFIG_FIELD = ForgeConfigSpec.class.getDeclaredField("childConfig");
+            IS_LOADED = configValue -> {
+                try {
+                    return UnsafeHacks.getField(CHILD_CONFIG_FIELD, UnsafeHacks.getField(SPEC_FIELD, configValue)) != null;
+                } catch (Exception ex) {
+                    return false;
+                }
+            };
+        } catch (Exception exception) {
+            IS_LOADED = configValue -> {
+                try {
+                    configValue.get();
+                    return true;
+                } catch (Exception ex) {
+                    return false;
+                }
+            };
+        }
+    }
+
     @SubscribeEvent
     static void configChanged(ModConfigEvent.Reloading event) {
-        SectionProtection.LOGGER.debug("Loaded SectionProtection config file {}", event.getConfig().getFileName());
-        reloadChunksConfigs(false);
+        SectionProtection.LOGGER.debug("SectionProtection config just got changed on the file system!");
+        reloadChunksConfigs(!IS_LOADED.test(ALWAYS_ALLOW_FAKE_PLAYERS));
     }
 
     @SubscribeEvent
     static void configLoaded(ModConfigEvent.Loading event) {
-        SectionProtection.LOGGER.debug("SectionProtection config just got changed on the file system!");
+        SectionProtection.LOGGER.debug("Loaded SectionProtection config file {}", event.getConfig().getFileName());
         reloadChunksConfigs(true);
     }
 

@@ -1,1 +1,1 @@
-- Add JourneyMap compat
+- Fix some bugs related to JM compat

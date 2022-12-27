@@ -58,6 +58,7 @@ public class Banners extends SavedData implements BannerManager {
     @Override
     public void createTeam(Banner banner, UUID owner) {
         banners.put(banner, observe(banner, Lists.newArrayList(owner)));
+        MinecraftForge.EVENT_BUS.post(new TeamChangeEvent.Server(banner, List.of(owner)));
         setDirty(true);
     }
 

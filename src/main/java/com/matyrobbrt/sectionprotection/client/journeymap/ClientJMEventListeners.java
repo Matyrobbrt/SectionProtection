@@ -23,6 +23,7 @@ public class ClientJMEventListeners {
     @SubscribeEvent
     static void logout(final ClientPlayerNetworkEvent.LoggingOut event) {
         JMHelper.getInstance().removeAllMarkers();
+        STORE.clear();
     }
 
     @SubscribeEvent
